@@ -1,9 +1,9 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col>
-        <div v-if="userStore.user" class="chat-container">
-          <div class="messages-list">
+  <v-container class="fill-height">
+    <v-row class="h-100">
+      <v-col class="d-flex flex-column">
+        <div v-if="userStore.user" class="chat-container d-flex flex-column">
+          <div class="messages-list flex-grow-1">
             <div v-for="message in messages" :key="message.id" class="message"
               :class="{ 'my-message': message.uid === userStore.user.uid }">
               <div class="message-content">
@@ -21,7 +21,7 @@
             </v-text-field>
           </v-form>
         </div>
-        <div v-else>
+        <div v-else class="fill-height d-flex justify-center align-center">
           <v-alert type="info" border="start" prominent>
             Please log in to see the chat.
           </v-alert>
@@ -101,16 +101,13 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
 
 <style scoped>
 .chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 70vh;
+  height: 100%;
   border: 1px solid #ccc;
   border-radius: 4px;
   padding: 16px;
 }
 
 .messages-list {
-  flex-grow: 1;
   overflow-y: auto;
   margin-bottom: 16px;
   display: flex;
