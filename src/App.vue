@@ -20,7 +20,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { auth } from '@/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -29,19 +28,17 @@ import Chat from './components/Chat.vue';
 
 const userStore = useUserStore();
 
-onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      userStore.setUser({
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-      });
-    } else {
-      userStore.clearUser();
-    }
-  });
+const unsubscribe = onAuthStateChanged(auth, (user) => {
+  if (user) {
+    userStore.setUser({
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL,
+    });
+  } else {
+    userStore.clearUser();
+  }
 });
 
 const logout = async () => {
