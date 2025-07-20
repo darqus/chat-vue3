@@ -22,13 +22,14 @@
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user';
 import { auth } from '@/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onIdTokenChanged, signOut } from 'firebase/auth';
+import { onUnmounted } from 'vue';
 import Login from './components/Login.vue';
 import Chat from './components/Chat.vue';
 
 const userStore = useUserStore();
 
-const unsubscribe = onAuthStateChanged(auth, (user) => {
+const unsubscribe = onIdTokenChanged(auth, (user) => {
   if (user) {
     userStore.setUser({
       uid: user.uid,
@@ -39,6 +40,10 @@ const unsubscribe = onAuthStateChanged(auth, (user) => {
   } else {
     userStore.clearUser();
   }
+});
+
+onUnmounted(() => {
+  unsubscribe();
 });
 
 const logout = async () => {
