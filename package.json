@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "deploy": "vue-tsc -b && vite build && firebase deploy --only hosting",
-    "preview": "vite preview"
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "preview": "vite preview",
+    "lint": "eslint . --fix"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -27,8 +28,12 @@
     "@types/vue-router": "^2.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/tsconfig": "^0.7.0",
+    "eslint": "^9.31.0",
+    "eslint-plugin-vue": "^9.27.0",
+    "globals": "^15.8.0",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4",
+    "typescript-eslint": "^8.0.0-alpha.54",
+    "vite": "^7.0.5",
     "vue-tsc": "^2.2.12"
   }
 }
