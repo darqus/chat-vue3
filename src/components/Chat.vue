@@ -4,8 +4,13 @@
     <v-row>
       <v-col>
         <div class="chat-container" ref="chatContainer">
-          <div v-for="message in messages" :key="message.id" class="d-flex my-2">
-            <div class="message-bubble" :class="{ 'my-message': message.uid === userStore.user?.uid }">
+          <div
+            v-for="message in messages"
+            :key="message.id"
+            class="message-row"
+            :class="{ 'my-message-row': message.uid === userStore.user?.uid }"
+          >
+            <div class="message-bubble">
               <div class="font-weight-bold">{{ message.name }}</div>
               <div>{{ message.text }}</div>
               <div class="text-caption text-grey">{{ new Date(message.createdAt).toLocaleTimeString() }}</div>
@@ -108,6 +113,15 @@ const sendMessage = async () => {
   flex-direction: column;
 }
 
+.message-row {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.my-message-row {
+  justify-content: flex-end;
+}
+
 .message-bubble {
   padding: 8px 12px;
   border-radius: 18px;
@@ -115,10 +129,7 @@ const sendMessage = async () => {
   background-color: #f0f0f0;
 }
 
-.my-message {
+.my-message-row .message-bubble {
   background-color: #dcf8c6;
-  align-self: flex-end;
-  text-align: right;
-  margin-left: auto;
 }
 </style>
