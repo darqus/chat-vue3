@@ -3,9 +3,12 @@
     <v-app-bar app color="primary" dark>
       <v-toolbar-title>Firebase Chat</v-toolbar-title>
       <v-spacer></v-spacer>
-      <div v-if="userStore.user">
-        <span class="mr-4">{{ userStore.user.displayName }}</span>
-        <v-btn @click="logout" icon="mdi-logout"></v-btn>
+      <div v-if="userStore.user" class="d-flex align-center">
+        <v-avatar v-if="userStore.user.photoURL" size="36" class="mr-3">
+          <v-img :src="userStore.user.photoURL" :alt="userStore.user.displayName || ''"></v-img>
+        </v-avatar>
+        <span>{{ userStore.user.displayName }}</span>
+        <v-btn @click="logout" icon="mdi-logout" class="ml-3"></v-btn>
       </div>
     </v-app-bar>
 
@@ -33,6 +36,7 @@ onMounted(() => {
         uid: user.uid,
         displayName: user.displayName,
         email: user.email,
+        photoURL: user.photoURL,
       });
     } else {
       userStore.clearUser();
