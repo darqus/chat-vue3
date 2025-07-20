@@ -1,26 +1,49 @@
 <template>
-  <div>
-    <v-btn v-if="!userStore.isLoggedIn" @click="userStore.login" prepend-icon="mdi-google">
-      Login with Google
-    </v-btn>
-    <div v-else class="d-flex align-center">
-      <v-avatar size="36" class="mr-3">
-        <v-img
-          :src="userStore.user?.photoURL ?? ''"
-          alt="User Avatar"
-          cover
-        ></v-img>
-      </v-avatar>
-      <span>{{ userStore.user?.displayName }}</span>
-      <v-btn @click="userStore.logout" class="ml-4" variant="outlined">
-        Logout
-      </v-btn>
-    </div>
-  </div>
+  <v-container class="fill-height" fluid>
+    <v-row align="center" justify="center">
+      <v-col cols="12" sm="8" md="4">
+        <v-card class="elevation-12">
+          <v-toolbar color="primary" dark flat>
+            <v-toolbar-title>Login</v-toolbar-title>
+          </v-toolbar>
+          <v-card-text>
+            <p class="text-center">
+              Sign in to join the chat
+            </p>
+          </v-card-text>
+          <v-card-actions class="justify-center">
+            <v-btn @click="loginWithGoogle" color="red" dark large block prepend-icon="mdi-google">
+              Login with Google
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user'
+import { auth } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useUserStore } from '@/stores/user';
 
-const userStore = useUserStore()
+const userStore = useUserStore();
+
+const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    if (user) {
+      userStore.setUser({
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+      });
+    }
+  } catch (error) {
+    console.error("Login failed: ", error);
+    // You might want to show an error message to the user here
+  }
+};
 </script>

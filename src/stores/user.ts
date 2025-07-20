@@ -1,38 +1,22 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { auth } from '@/firebase'
-import { GoogleAuthProvider, signInWithPopup, signOut, type User } from 'firebase/auth'
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+
+interface UserState {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+}
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref<User | null>(null)
-  const isLoggedIn = ref(false)
+  const user = ref<UserState | null>(null);
 
-  auth.onAuthStateChanged((account) => {
-    if (account) {
-      user.value = account
-      isLoggedIn.value = true
-    } else {
-      user.value = null
-      isLoggedIn.value = false
-    }
-  })
-
-  const login = async () => {
-    const provider = new GoogleAuthProvider()
-    try {
-      await signInWithPopup(auth, provider)
-    } catch (error) {
-      console.error(error)
-    }
+  function setUser(newUser: UserState | null) {
+    user.value = newUser;
   }
 
-  const logout = async () => {
-    try {
-      await signOut(auth)
-    } catch (error) {
-      console.error(error)
-    }
+  function clearUser() {
+    user.value = null;
   }
 
-  return { user, isLoggedIn, login, logout }
-})
+  return { user, setUser, clearUser };
+});

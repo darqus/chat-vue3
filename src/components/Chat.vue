@@ -1,135 +1,145 @@
 <template>
   <v-container>
-    <!-- Chat Messages -->
     <v-row>
       <v-col>
-        <div class="chat-container" ref="chatContainer">
-          <div
-            v-for="message in messages"
-            :key="message.id"
-            class="message-row"
-            :class="{ 'my-message-row': message.uid === userStore.user?.uid }"
-          >
-            <div class="message-bubble">
-              <div class="font-weight-bold">{{ message.name }}</div>
-              <div>{{ message.text }}</div>
-              <div class="text-caption text-grey">{{ new Date(message.createdAt).toLocaleTimeString() }}</div>
+        <div v-if="userStore.user" class="chat-container">
+          <div class="messages-list">
+            <div v-for="message in messages" :key="message.id" class="message"
+              :class="{ 'my-message': message.uid === userStore.user.uid }">
+              <div class="message-content">
+                <div class="font-weight-bold">{{ message.displayName }}</div>
+                <div>{{ message.text }}</div>
+                <div class="text-caption text-grey">{{ formatTimestamp(message.createdAt) }}</div>
+              </div>
             </div>
           </div>
+          <v-form @submit.prevent="sendMessage" class="mt-4">
+            <v-text-field v-model="newMessage" label="Type a message..." outlined dense hide-details>
+              <template v-slot:append>
+                <v-btn type="submit" color="primary" icon="mdi-send" :disabled="!newMessage.trim()"></v-btn>
+              </template>
+            </v-text-field>
+          </v-form>
         </div>
-      </v-col>
-    </v-row>
-    
-    <!-- Message Input -->
-    <v-row>
-      <v-col>
-        <v-form @submit.prevent="sendMessage" :disabled="!userStore.isLoggedIn">
-          <v-text-field
-            v-model="newMessage"
-            label="Type a message..."
-            outlined
-            clearable
-            append-icon="mdi-send"
-            @click:append="sendMessage"
-            :disabled="!userStore.isLoggedIn"
-            :placeholder="!userStore.isLoggedIn ? 'Please login to send messages' : ''"
-          ></v-text-field>
-        </v-form>
+        <div v-else>
+          <v-alert type="info" border="start" prominent>
+            Please log in to see the chat.
+          </v-alert>
+        </div>
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { db } from '@/firebase';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  orderBy,
+  Timestamp,
+} from 'firebase/firestore';
 import { useUserStore } from '@/stores/user';
+
+const userStore = useUserStore();
 
 interface Message {
   id: string;
   text: string;
-  name: string;
   uid: string;
-  createdAt: number;
+  displayName: string;
+  createdAt: Timestamp | null;
 }
 
-const userStore = useUserStore();
 const messages = ref<Message[]>([]);
 const newMessage = ref('');
-const chatContainer = ref<HTMLDivElement | null>(null);
 
-// Get messages
+const messagesCollection = collection(db, 'messages');
+const q = query(messagesCollection, orderBy('createdAt', 'asc'));
+
+let unsubscribe: () => void;
+
 onMounted(() => {
-  const q = query(collection(db, 'messages'), orderBy('createdAt'));
-  onSnapshot(q, (querySnapshot) => {
-    messages.value = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      messages.value.push({
-        id: doc.id,
-        text: data.text,
-        name: data.name,
-        uid: data.uid,
-        createdAt: data.createdAt?.toMillis() ?? Date.now(),
-      });
-    });
-
-    // Scroll to bottom
-    nextTick(() => {
-      if(chatContainer.value) {
-        chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-      }
-    });
+  unsubscribe = onSnapshot(q, (snapshot) => {
+    messages.value = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      text: doc.data().text,
+      uid: doc.data().uid,
+      displayName: doc.data().displayName,
+      createdAt: doc.data().createdAt,
+    }));
   });
 });
 
-// Send message
-const sendMessage = async () => {
-  if (newMessage.value.trim() === '' || !userStore.user) return;
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe();
+  }
+});
 
-  try {
-    await addDoc(collection(db, 'messages'), {
+const sendMessage = async () => {
+  if (newMessage.value.trim() && userStore.user) {
+    await addDoc(messagesCollection, {
       text: newMessage.value,
-      name: userStore.user.displayName,
       uid: userStore.user.uid,
+      displayName: userStore.user.displayName || 'Anonymous',
       createdAt: serverTimestamp(),
     });
     newMessage.value = '';
-  } catch (error) {
-    console.error('Error sending message:', error);
   }
+};
+
+const formatTimestamp = (timestamp: Timestamp | null): string => {
+  if (!timestamp) return 'Sending...';
+  return new Date(timestamp.toDate()).toLocaleTimeString();
 };
 </script>
 
 <style scoped>
 .chat-container {
-  height: 400px;
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
   border: 1px solid #ccc;
   border-radius: 4px;
-  padding: 10px;
+  padding: 16px;
+}
+
+.messages-list {
+  flex-grow: 1;
   overflow-y: auto;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background-color: #f1f1f1;
+  align-self: flex-start;
+  word-wrap: break-word;
+}
+
+.message.my-message {
+  background-color: #d1eaff;
+  align-self: flex-end;
+}
+
+.message-content {
   display: flex;
   flex-direction: column;
 }
 
-.message-row {
-  display: flex;
-  margin-bottom: 12px;
-}
-
-.my-message-row {
-  justify-content: flex-end;
-}
-
-.message-bubble {
-  padding: 8px 12px;
-  border-radius: 18px;
-  max-width: 70%;
-  background-color: #f0f0f0;
-}
-
-.my-message-row .message-bubble {
-  background-color: #dcf8c6;
+.my-message .message-content {
+  align-items: flex-end;
 }
 </style>
