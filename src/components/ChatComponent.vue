@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   orderBy,
   Timestamp,
+  FieldValue,
   doc,
   setDoc,
   deleteDoc,
@@ -21,18 +22,26 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
+interface ReplyInfo {
+  id: string
+  text: string
+  displayName: string
+}
+
 interface Message {
   id: string
   text: string
   uid: string
   displayName: string
-  createdAt: Timestamp | null
+  createdAt: Timestamp | FieldValue | null
+  replyTo?: ReplyInfo
 }
 
 const isLoading = ref(true)
 const typingUsers = ref<string[]>([])
 const messages = ref<Message[]>([])
 const newMessage = ref('')
+const replyingToMessage = ref<Message | null>(null)
 const messagesContainer = ref<HTMLElement | null>(null)
 let typingTimeout: number | null = null
 
@@ -67,6 +76,7 @@ onMounted(() => {
       uid: doc.data().uid,
       displayName: doc.data().displayName,
       createdAt: doc.data().createdAt,
+      replyTo: doc.data().replyTo,
     }))
     // Как только данные загружены, отключаем индикатор
     isLoading.value = false
@@ -106,13 +116,31 @@ onUnmounted(() => {
 
 const sendMessage = async () => {
   if (newMessage.value.trim() && userStore.user) {
-    await addDoc(messagesCollection, {
+    const messagePayload: {
+      text: string
+      uid: string
+      displayName: string
+      createdAt: Timestamp | FieldValue | null
+      replyTo?: ReplyInfo
+    } = {
       text: newMessage.value,
       uid: userStore.user.uid,
       displayName: userStore.user.displayName || 'Anonymous',
       createdAt: serverTimestamp(),
-    })
+    }
+
+    if (replyingToMessage.value) {
+      messagePayload.replyTo = {
+        id: replyingToMessage.value.id,
+        text: replyingToMessage.value.text,
+        displayName: replyingToMessage.value.displayName,
+      }
+    }
+
+    await addDoc(messagesCollection, messagePayload)
+
     newMessage.value = ''
+    cancelReply() // Сбрасываем состояние ответа
     // После отправки сообщения мы точно не печатаем
     if (typingTimeout) clearTimeout(typingTimeout)
     typingTimeout = null
@@ -120,8 +148,8 @@ const sendMessage = async () => {
   }
 }
 
-const formatTimestamp = (timestamp: Timestamp | null): string => {
-  if (!timestamp) return 'Sending...'
+const formatTimestamp = (timestamp: Timestamp | FieldValue | null): string => {
+  if (!timestamp || !('toDate' in timestamp)) return 'Sending...'
   return new Date(timestamp.toDate()).toLocaleTimeString()
 }
 
@@ -161,6 +189,26 @@ const typingIndicatorText = computed(() => {
   if (users.length === 2) return `${users[0]} и ${users[1]} печатают...`
   return 'Несколько человек печатают...'
 })
+
+const startReply = (message: Message) => {
+  replyingToMessage.value = message
+}
+
+const cancelReply = () => {
+  replyingToMessage.value = null
+}
+
+const scrollToMessage = (messageId: string) => {
+  const element = document.getElementById(`message-${messageId}`)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // Временно подсвечиваем сообщение, к которому перешли
+    element.classList.add('message--highlighted')
+    setTimeout(() => {
+      element.classList.remove('message--highlighted')
+    }, 1500)
+  }
+}
 </script>
 
 <template>
@@ -185,9 +233,32 @@ const typingIndicatorText = computed(() => {
           <div
             v-for="message in messages"
             :key="message.id"
+            :id="`message-${message.id}`"
             class="message"
             :class="{ 'my-message': message.uid === userStore.user.uid }"
           >
+            <v-btn
+              class="message__reply-btn"
+              icon="mdi-reply"
+              variant="text"
+              size="x-small"
+              @click="startReply(message)"
+            ></v-btn>
+
+            <!-- Блок с цитируемым сообщением -->
+            <div
+              v-if="message.replyTo"
+              class="message__reply-to"
+              @click="scrollToMessage(message.replyTo.id)"
+            >
+              <div class="font-weight-bold text-caption">
+                {{ message.replyTo.displayName }}
+              </div>
+              <div class="text-caption text-truncate">
+                {{ message.replyTo.text }}
+              </div>
+            </div>
+
             <div class="message-content">
               <div class="font-weight-bold">{{ message.displayName }}</div>
               <div>{{ message.text }}</div>
@@ -213,10 +284,40 @@ const typingIndicatorText = computed(() => {
   </v-main>
 
   <!-- v-footer с атрибутом 'app' закрепляется внизу экрана -->
-  <v-footer v-if="userStore.user" app class="pa-2">
+  <v-footer
+    v-if="userStore.user"
+    app
+    class="pa-0 d-flex flex-column"
+    style="height: auto"
+  >
+    <!-- Панель контекста ответа -->
+    <v-sheet
+      v-if="replyingToMessage"
+      color="grey-lighten-3"
+      class="reply-context-bar pa-2 d-flex align-center"
+      style="width: 100%"
+    >
+      <v-icon start>mdi-reply</v-icon>
+      <div class="flex-grow-1 text-truncate">
+        <div class="text-caption font-weight-bold">
+          Ответ пользователю {{ replyingToMessage.displayName }}
+        </div>
+        <div class="text-caption">
+          {{ replyingToMessage.text }}
+        </div>
+      </div>
+      <v-btn
+        icon="mdi-close"
+        variant="text"
+        size="small"
+        @click="cancelReply"
+      ></v-btn>
+    </v-sheet>
+
+    <!-- Форма ввода -->
     <v-form
       @submit.prevent="sendMessage"
-      class="d-flex align-center"
+      class="d-flex align-center pa-2"
       style="width: 100%"
     >
       <v-text-field
@@ -245,6 +346,7 @@ const typingIndicatorText = computed(() => {
 }
 
 .message {
+  position: relative; /* Необходимо для позиционирования кнопки ответа */
   display: flex;
   flex-direction: column;
   max-width: 100%;
@@ -268,6 +370,39 @@ const typingIndicatorText = computed(() => {
 
 .my-message .message-content {
   align-items: flex-end;
+}
+
+.message__reply-btn {
+  position: absolute;
+  top: -8px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1;
+}
+
+.message:hover .message__reply-btn {
+  opacity: 1;
+}
+
+.message.my-message .message__reply-btn {
+  left: -8px;
+}
+
+.message:not(.my-message) .message__reply-btn {
+  right: -8px;
+}
+
+.message__reply-to {
+  border-left: 3px solid #007bff;
+  padding-left: 8px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.message--highlighted {
+  transition: background-color 0.5s ease;
+  background-color: #fff3cd !important; /* Светло-желтый цвет для подсветки */
 }
 
 .typing-indicator {
