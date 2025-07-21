@@ -3,7 +3,7 @@ defineOptions({
   name: 'ChatComponent',
 })
 
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { db } from '@/firebase'
 import {
   collection,
@@ -13,6 +13,9 @@ import {
   serverTimestamp,
   orderBy,
   Timestamp,
+  doc,
+  setDoc,
+  deleteDoc,
 } from 'firebase/firestore'
 import { useUserStore } from '@/stores/user'
 
@@ -27,11 +30,15 @@ interface Message {
 }
 
 const isLoading = ref(true)
+const typingUsers = ref<string[]>([])
 const messages = ref<Message[]>([])
 const newMessage = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+let typingTimeout: number | null = null
 
 const messagesCollection = collection(db, 'messages')
+const typingStatusCollection = collection(db, 'typingStatus')
+
 const q = query(messagesCollection, orderBy('createdAt', 'asc'))
 
 const scrollToBottom = async () => {
@@ -46,7 +53,11 @@ const scrollToBottom = async () => {
 // Отслеживаем добавление новых сообщений и прокручиваем вниз
 watch(messages, scrollToBottom, { deep: true })
 
+// Отслеживаем появление/исчезновение индикатора и тоже прокручиваем, чтобы он был виден
+watch(typingUsers, scrollToBottom)
+
 let unsubscribe: () => void
+let unsubscribeTyping: () => void
 
 onMounted(() => {
   unsubscribe = onSnapshot(q, (snapshot) => {
@@ -60,11 +71,36 @@ onMounted(() => {
     // Как только данные загружены, отключаем индикатор
     isLoading.value = false
   })
+
+  // Слушатель для статуса "печатает"
+  const typingQuery = query(typingStatusCollection)
+  unsubscribeTyping = onSnapshot(typingQuery, (snapshot) => {
+    const now = Date.now()
+    const currentTypingUsers: string[] = []
+    snapshot.forEach((doc) => {
+      // Не показывать для себя
+      if (doc.id === userStore.user?.uid) return
+
+      const data = doc.data()
+      // Статус актуален, если обновлялся в последние 10 секунд
+      if (data.lastUpdated && now - data.lastUpdated.toMillis() < 10000) {
+        currentTypingUsers.push(data.displayName || 'Кто-то')
+      }
+    })
+    typingUsers.value = currentTypingUsers
+  })
 })
 
 onUnmounted(() => {
   if (unsubscribe) {
     unsubscribe()
+  }
+  if (unsubscribeTyping) {
+    unsubscribeTyping()
+  }
+  // Убираем свой статус "печатает" при выходе
+  if (userStore.user) {
+    updateTypingStatus(false)
   }
 })
 
@@ -77,6 +113,10 @@ const sendMessage = async () => {
       createdAt: serverTimestamp(),
     })
     newMessage.value = ''
+    // После отправки сообщения мы точно не печатаем
+    if (typingTimeout) clearTimeout(typingTimeout)
+    typingTimeout = null
+    await updateTypingStatus(false)
   }
 }
 
@@ -84,6 +124,43 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
   if (!timestamp) return 'Sending...'
   return new Date(timestamp.toDate()).toLocaleTimeString()
 }
+
+const updateTypingStatus = async (isTyping: boolean) => {
+  if (!userStore.user) return
+  const typingDocRef = doc(db, 'typingStatus', userStore.user.uid)
+  if (isTyping) {
+    await setDoc(typingDocRef, {
+      displayName: userStore.user.displayName,
+      lastUpdated: serverTimestamp(),
+    })
+  } else {
+    await deleteDoc(typingDocRef)
+  }
+}
+
+const handleInput = () => {
+  if (!userStore.user) return
+  // Если таймер уже есть, сбрасываем его. Если нет - значит, только начали печатать.
+  if (typingTimeout) {
+    clearTimeout(typingTimeout)
+  } else {
+    updateTypingStatus(true)
+  }
+
+  // Устанавливаем таймер, который через 3 секунды бездействия уберет статус "печатает"
+  typingTimeout = window.setTimeout(() => {
+    updateTypingStatus(false)
+    typingTimeout = null
+  }, 3000)
+}
+
+const typingIndicatorText = computed(() => {
+  const users = typingUsers.value
+  if (users.length === 0) return ''
+  if (users.length === 1) return `${users[0]} печатает...`
+  if (users.length === 2) return `${users[0]} и ${users[1]} печатают...`
+  return 'Несколько человек печатают...'
+})
 </script>
 
 <template>
@@ -119,6 +196,12 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
               </div>
             </div>
           </div>
+          <!-- Индикатор "печатает..." -->
+          <div v-if="typingIndicatorText" class="typing-indicator pl-4">
+            <span class="text-caption text-disabled">{{
+              typingIndicatorText
+            }}</span>
+          </div>
         </v-container>
       </div>
     </div>
@@ -142,6 +225,7 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
         variant="solo"
         hide-details
         @keydown.enter.prevent="sendMessage"
+        @input="handleInput"
       ></v-text-field>
       <v-btn
         type="submit"
@@ -184,5 +268,11 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
 
 .my-message .message-content {
   align-items: flex-end;
+}
+
+.typing-indicator {
+  height: 24px; /* Резервируем место, чтобы чат не "прыгал" */
+  display: flex;
+  align-items: center;
 }
 </style>
