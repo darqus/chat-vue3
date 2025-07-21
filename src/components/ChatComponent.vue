@@ -3,7 +3,7 @@ defineOptions({
   name: 'ChatComponent',
 })
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { db } from '@/firebase'
 import {
   collection,
@@ -28,9 +28,22 @@ interface Message {
 
 const messages = ref<Message[]>([])
 const newMessage = ref('')
+const messagesContainer = ref<HTMLElement | null>(null)
 
 const messagesCollection = collection(db, 'messages')
 const q = query(messagesCollection, orderBy('createdAt', 'asc'))
+
+const scrollToBottom = async () => {
+  // nextTick гарантирует, что DOM обновился перед попыткой прокрутки
+  await nextTick()
+  const container = messagesContainer.value
+  if (container) {
+    container.scrollTop = container.scrollHeight
+  }
+}
+
+// Отслеживаем добавление новых сообщений и прокручиваем вниз
+watch(messages, scrollToBottom, { deep: true })
 
 let unsubscribe: () => void
 
@@ -71,80 +84,78 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
 </script>
 
 <template>
-  <v-container class="fill-height">
-    <v-row class="h-100">
-      <v-col class="d-flex flex-column">
-        <div v-if="userStore.user" class="chat-container d-flex flex-column">
-          <div class="messages-list flex-grow-1">
-            <div
-              v-for="message in messages"
-              :key="message.id"
-              class="message"
-              :class="{ 'my-message': message.uid === userStore.user.uid }"
-            >
-              <div class="message-content">
-                <div class="font-weight-bold">{{ message.displayName }}</div>
-                <div>{{ message.text }}</div>
-                <div class="text-caption text-grey">
-                  {{ formatTimestamp(message.createdAt) }}
-                </div>
-              </div>
+  <!-- v-main будет занимать всё доступное пространство между другими app-компонентами (например, v-footer) -->
+  <v-main>
+    <div
+      v-if="userStore.user"
+      ref="messagesContainer"
+      class="messages-list-wrapper"
+    >
+      <v-container>
+        <div
+          v-for="message in messages"
+          :key="message.id"
+          class="message"
+          :class="{ 'my-message': message.uid === userStore.user.uid }"
+        >
+          <div class="message-content">
+            <div class="font-weight-bold">{{ message.displayName }}</div>
+            <div>{{ message.text }}</div>
+            <div class="text-caption text-grey">
+              {{ formatTimestamp(message.createdAt) }}
             </div>
           </div>
-          <v-form @submit.prevent="sendMessage" class="mt-4">
-            <v-text-field
-              v-model="newMessage"
-              label="Type a message..."
-              outlined
-              dense
-              hide-details
-            >
-              <template #append>
-                <v-btn
-                  type="submit"
-                  color="primary"
-                  icon="mdi-send"
-                  :disabled="!newMessage.trim()"
-                ></v-btn>
-              </template>
-            </v-text-field>
-          </v-form>
         </div>
-        <div v-else class="fill-height d-flex justify-center align-center">
-          <v-alert type="info" border="start" prominent>
-            Please log in to see the chat.
-          </v-alert>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
+      </v-container>
+    </div>
+    <div v-else class="fill-height d-flex justify-center align-center">
+      <v-alert type="info" border="start" prominent>
+        Please log in to see the chat.
+      </v-alert>
+    </div>
+  </v-main>
+
+  <!-- v-footer с атрибутом 'app' закрепляется внизу экрана -->
+  <v-footer v-if="userStore.user" app class="pa-2">
+    <v-form
+      @submit.prevent="sendMessage"
+      class="d-flex align-center"
+      style="width: 100%"
+    >
+      <v-text-field
+        v-model="newMessage"
+        label="Type a message..."
+        variant="solo"
+        hide-details
+        @keydown.enter.prevent="sendMessage"
+      ></v-text-field>
+      <v-btn
+        type="submit"
+        class="ml-2"
+        icon="mdi-send"
+        color="primary"
+        :disabled="!newMessage.trim()"
+      ></v-btn>
+    </v-form>
+  </v-footer>
 </template>
 
 <style scoped>
-.chat-container {
-  height: 100%;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 16px;
-}
-
-.messages-list {
+.messages-list-wrapper {
+  height: 100%; /* Занимает всю высоту v-main */
   overflow-y: auto;
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .message {
   display: flex;
   flex-direction: column;
-  max-width: 80%;
+  max-width: 100%;
   padding: 8px 12px;
   border-radius: 12px;
   background-color: #f1f1f1;
   align-self: flex-start;
   word-wrap: break-word;
+  margin-bottom: 12px; /* Используем margin для отступов между сообщениями */
 }
 
 .message.my-message {
