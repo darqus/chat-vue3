@@ -5,6 +5,8 @@ import { onIdTokenChanged, signOut } from 'firebase/auth'
 import { onUnmounted } from 'vue'
 import Login from './components/LoginForm.vue'
 import Chat from './components/ChatComponent.vue'
+import NotificationSnackbar from './components/NotificationSnackbar.vue'
+import { notify } from '@/utils/notification'
 
 const userStore = useUserStore()
 
@@ -32,8 +34,10 @@ onUnmounted(() => {
 const logout = async () => {
   try {
     await signOut(auth)
+    notify.info('Вы вышли из системы')
   } catch (error) {
     console.error('Error signing out: ', error)
+    notify.error('Ошибка выхода из системы')
   }
 }
 </script>
@@ -59,5 +63,7 @@ const logout = async () => {
       <Login v-if="!userStore.user" />
       <Chat v-else />
     </v-main>
+    
+    <NotificationSnackbar />
   </v-app>
 </template>

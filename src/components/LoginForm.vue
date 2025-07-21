@@ -6,6 +6,7 @@ defineOptions({
 import { auth } from '@/firebase'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { useUserStore } from '@/stores/user'
+import { notify } from '@/utils/notification'
 
 const userStore = useUserStore()
 
@@ -21,10 +22,11 @@ const loginWithGoogle = async () => {
         email: user.email,
         photoURL: user.photoURL,
       })
+      notify.success('Успешный вход в систему')
     }
   } catch (error) {
     console.error('Login failed: ', error)
-    // You might want to show an error message to the user here
+    notify.error('Ошибка входа в систему')
   }
 }
 </script>

@@ -6,6 +6,7 @@ defineOptions({
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { db } from '@/firebase'
+import { notify } from '@/utils/notification'
 import {
   addDoc,
   serverTimestamp,
@@ -126,14 +127,20 @@ const sendMessage = async () => {
       }
     }
 
-    await addDoc(messagesCollection, messagePayload)
-
-    newMessage.value = ''
-    cancelReply() // Сбрасываем состояние ответа
-    // После отправки сообщения мы точно не печатаем
-    if (typingTimeout) clearTimeout(typingTimeout)
-    typingTimeout = null
-    await updateTypingStatus(false)
+    try {
+      await addDoc(messagesCollection, messagePayload)
+      notify.success('Сообщение отправлено')
+      
+      newMessage.value = ''
+      cancelReply() // Сбрасываем состояние ответа
+      // После отправки сообщения мы точно не печатаем
+      if (typingTimeout) clearTimeout(typingTimeout)
+      typingTimeout = null
+      await updateTypingStatus(false)
+    } catch (error) {
+      console.error('Error sending message:', error)
+      notify.error('Ошибка отправки сообщения')
+    }
   }
 }
 
@@ -262,12 +269,18 @@ const saveEdit = async () => {
     cancelEditing()
     return
   }
-  const messageRef = doc(db, 'messages', editingMessage.value.id)
-  await updateDoc(messageRef, {
-    text: editedText.value,
-    isEdited: true,
-  })
-  cancelEditing()
+  try {
+    const messageRef = doc(db, 'messages', editingMessage.value.id)
+    await updateDoc(messageRef, {
+      text: editedText.value,
+      isEdited: true,
+    })
+    notify.success('Сообщение обновлено')
+    cancelEditing()
+  } catch (error) {
+    console.error('Error updating message:', error)
+    notify.error('Ошибка обновления сообщения')
+  }
 }
 
 const promptDelete = (message: Message) => {
@@ -282,9 +295,15 @@ const cancelDelete = () => {
 
 const confirmDelete = async () => {
   if (!messageToDelete.value) return
-  const messageRef = doc(db, 'messages', messageToDelete.value.id)
-  await deleteDoc(messageRef)
-  cancelDelete()
+  try {
+    const messageRef = doc(db, 'messages', messageToDelete.value.id)
+    await deleteDoc(messageRef)
+    notify.info('Сообщение удалено')
+    cancelDelete()
+  } catch (error) {
+    console.error('Error deleting message:', error)
+    notify.error('Ошибка удаления сообщения')
+  }
 }
 
 const startReply = (message: Message) => {
