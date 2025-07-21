@@ -46,7 +46,14 @@ export const useUserStore = defineStore('user', () => {
   const messages = ref<Message[]>([])
 
   function subscribeToMessages() {
-    if (unsubscribeMessages.value) unsubscribeMessages.value()
+    if (!auth.currentUser) {
+      console.error('Trying to subscribe to messages without authentication')
+      return
+    }
+
+    if (unsubscribeMessages.value) {
+      unsubscribeMessages.value()
+    }
 
     const messagesCollection = collection(db, 'messages')
     const q = query(messagesCollection, orderBy('createdAt', 'asc'))
