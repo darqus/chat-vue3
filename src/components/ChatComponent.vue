@@ -17,7 +17,6 @@ import {
   deleteDoc,
   collection,
   query,
-  orderBy,
   onSnapshot,
 } from 'firebase/firestore'
 
@@ -55,8 +54,6 @@ let typingTimeout: number | null = null
 const messagesCollection = collection(db, 'messages')
 const typingStatusCollection = collection(db, 'typingStatus')
 
-const q = query(messagesCollection, orderBy('createdAt', 'asc'))
-
 const scrollToBottom = async () => {
   // nextTick гарантирует, что DOM обновился перед попыткой прокрутки
   await nextTick()
@@ -72,28 +69,12 @@ watch(messages, scrollToBottom, { deep: true })
 // Отслеживаем появление/исчезновение индикатора и тоже прокручиваем, чтобы он был виден
 watch(typingUsers, scrollToBottom)
 
-let unsubscribe: () => void
 let unsubscribeTyping: () => void
 
 onMounted(() => {
-  // Подписка на новые сообщения только для звуковых уведомлений
-  unsubscribe = onSnapshot(q, (snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === 'added') {
-        const docData = change.doc.data()
-        if (
-          !isLoading.value &&
-          docData.uid !== userStore.user?.uid &&
-          document.hidden
-        ) {
-          playSoundNotification()
-        }
-      }
-    })
-    isLoading.value = false
-  })
+  isLoading.value = false
 
-  // Слушатель для статуса "печатает"
+  // Слушатель только для статуса "печатает"
   const typingQuery = query(typingStatusCollection)
   unsubscribeTyping = onSnapshot(typingQuery, (snapshot) => {
     const now = Date.now()
@@ -113,9 +94,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (unsubscribe) {
-    unsubscribe()
-  }
   if (unsubscribeTyping) {
     unsubscribeTyping()
   }
@@ -162,23 +140,6 @@ const sendMessage = async () => {
 const formatTimestamp = (timestamp: Timestamp | FieldValue | null): string => {
   if (!timestamp || !('toDate' in timestamp)) return 'Sending...'
   return new Date(timestamp.toDate()).toLocaleTimeString()
-}
-
-/**
- * Воспроизводит звук уведомления.
- * Убедитесь, что у вас есть файл /public/notification.mp3
- */
-const playSoundNotification = () => {
-  // Путь к файлу относительно корневой папки public
-  const audio = new Audio('/notification.mp3')
-  audio.play().catch((error) => {
-    // Современные браузеры блокируют автовоспроизведение звука до первого
-    // взаимодействия пользователя со страницей (например, клика).
-    console.warn(
-      'Воспроизведение звука заблокировано браузером. Требуется взаимодействие с пользователем.',
-      error
-    )
-  })
 }
 
 const updateTypingStatus = async (isTyping: boolean) => {
