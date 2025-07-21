@@ -3,8 +3,8 @@ import { useUserStore } from '@/stores/user';
 import { auth } from '@/firebase';
 import { onIdTokenChanged, signOut } from 'firebase/auth';
 import { onUnmounted } from 'vue';
-import Login from './components/Login.vue';
-import Chat from './components/Chat.vue';
+import Login from './components/LoginForm.vue';
+import Chat from './components/ChatComponent.vue';
 
 const userStore = useUserStore();
 
@@ -29,7 +29,7 @@ const logout = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error("Error signing out: ", error);
+    console.error('Error signing out: ', error);
   }
 };
 </script>
@@ -41,7 +41,10 @@ const logout = async () => {
       <v-spacer></v-spacer>
       <div v-if="userStore.user" class="d-flex align-center">
         <v-avatar v-if="userStore.user.photoURL" size="36" class="mr-3">
-          <v-img :src="userStore.user.photoURL" :alt="userStore.user.displayName || ''"></v-img>
+          <v-img
+            :src="userStore.user.photoURL"
+            :alt="userStore.user.displayName || ''"
+          ></v-img>
         </v-avatar>
         <span>{{ userStore.user.displayName }}</span>
         <v-btn @click="logout" icon="mdi-logout" class="ml-3"></v-btn>

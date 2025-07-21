@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineOptions({
+  name: 'ChatComponent',
+});
+
 import { ref, onMounted, onUnmounted } from 'vue';
 import { db } from '@/firebase';
 import {
@@ -73,19 +77,35 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
         <div v-if="userStore.user" class="chat-container d-flex flex-column">
           <div class="messages-list flex-grow-1">
             <div
-v-for="message in messages" :key="message.id" class="message"
-              :class="{ 'my-message': message.uid === userStore.user.uid }">
+              v-for="message in messages"
+              :key="message.id"
+              class="message"
+              :class="{ 'my-message': message.uid === userStore.user.uid }"
+            >
               <div class="message-content">
                 <div class="font-weight-bold">{{ message.displayName }}</div>
                 <div>{{ message.text }}</div>
-                <div class="text-caption text-grey">{{ formatTimestamp(message.createdAt) }}</div>
+                <div class="text-caption text-grey">
+                  {{ formatTimestamp(message.createdAt) }}
+                </div>
               </div>
             </div>
           </div>
           <v-form @submit.prevent="sendMessage" class="mt-4">
-            <v-text-field v-model="newMessage" label="Type a message..." outlined dense hide-details>
+            <v-text-field
+              v-model="newMessage"
+              label="Type a message..."
+              outlined
+              dense
+              hide-details
+            >
               <template #append>
-                <v-btn type="submit" color="primary" icon="mdi-send" :disabled="!newMessage.trim()"></v-btn>
+                <v-btn
+                  type="submit"
+                  color="primary"
+                  icon="mdi-send"
+                  :disabled="!newMessage.trim()"
+                ></v-btn>
               </template>
             </v-text-field>
           </v-form>

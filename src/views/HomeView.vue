@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import Login from '@/components/Login.vue';
-import Chat from '@/components/Chat.vue';
+import Login from '@/components/LoginForm.vue';
+import Chat from '@/components/ChatComponent.vue';
 </script>
 
 <template>

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineOptions({
+  name: 'LoginForm',
+});
+
 import { auth } from '@/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useUserStore } from '@/stores/user';
@@ -19,7 +23,7 @@ const loginWithGoogle = async () => {
       });
     }
   } catch (error) {
-    console.error("Login failed: ", error);
+    console.error('Login failed: ', error);
     // You might want to show an error message to the user here
   }
 };
@@ -34,12 +38,17 @@ const loginWithGoogle = async () => {
             <v-toolbar-title>Login</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <p class="text-center">
-              Sign in to join the chat
-            </p>
+            <p class="text-center">Sign in to join the chat</p>
           </v-card-text>
           <v-card-actions class="justify-center">
-            <v-btn @click="loginWithGoogle" color="red" dark large block prepend-icon="mdi-google">
+            <v-btn
+              @click="loginWithGoogle"
+              color="red"
+              dark
+              large
+              block
+              prepend-icon="mdi-google"
+            >
               Login with Google
             </v-btn>
           </v-card-actions>
