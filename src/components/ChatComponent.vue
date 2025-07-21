@@ -4,22 +4,22 @@ defineOptions({
 })
 
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
+import { useUserStore } from '@/stores/user'
 import { db } from '@/firebase'
 import {
-  collection,
-  query,
-  onSnapshot,
   addDoc,
   serverTimestamp,
-  orderBy,
   Timestamp,
   FieldValue,
   doc,
   updateDoc,
   setDoc,
   deleteDoc,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
 } from 'firebase/firestore'
-import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
@@ -42,7 +42,7 @@ interface Message {
 
 const isLoading = ref(true)
 const typingUsers = ref<string[]>([])
-const messages = ref<Message[]>([])
+const messages = computed(() => userStore.messages)
 const newMessage = ref('')
 const replyingToMessage = ref<Message | null>(null)
 const editingMessage = ref<Message | null>(null)
@@ -76,42 +76,21 @@ let unsubscribe: () => void
 let unsubscribeTyping: () => void
 
 onMounted(() => {
-  // Более эффективный слушатель, который обрабатывает изменения по отдельности
+  // Подписка на новые сообщения только для звуковых уведомлений
   unsubscribe = onSnapshot(q, (snapshot) => {
     snapshot.docChanges().forEach((change) => {
-      const docData = change.doc.data()
-      const messageId = change.doc.id
-
       if (change.type === 'added') {
-        if (!messages.value.some((m) => m.id === messageId)) {
-          messages.value.push({ id: messageId, ...docData } as Message)
-
-          // Воспроизводим звук, если сообщение не от нас и вкладка неактивна
-          if (
-            !isLoading.value &&
-            docData.uid !== userStore.user?.uid &&
-            document.hidden
-          ) {
-            playSoundNotification()
-          }
+        const docData = change.doc.data()
+        if (
+          !isLoading.value &&
+          docData.uid !== userStore.user?.uid &&
+          document.hidden
+        ) {
+          playSoundNotification()
         }
-      }
-      if (change.type === 'modified') {
-        const index = messages.value.findIndex((m) => m.id === messageId)
-        if (index !== -1) {
-          // Обновляем только измененное сообщение, сохраняя объект
-          messages.value[index] = { ...messages.value[index], ...docData }
-        }
-      }
-      if (change.type === 'removed') {
-        messages.value = messages.value.filter((m) => m.id !== messageId)
       }
     })
-
-    // Отключаем индикатор загрузки после обработки первого снимка данных
-    if (isLoading.value) {
-      isLoading.value = false
-    }
+    isLoading.value = false
   })
 
   // Слушатель для статуса "печатает"
