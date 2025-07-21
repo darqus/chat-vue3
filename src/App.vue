@@ -1,24 +1,3 @@
-<template>
-  <v-app>
-    <v-app-bar app color="primary" dark>
-      <v-toolbar-title>Firebase Chat</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <div v-if="userStore.user" class="d-flex align-center">
-        <v-avatar v-if="userStore.user.photoURL" size="36" class="mr-3">
-          <v-img :src="userStore.user.photoURL" :alt="userStore.user.displayName || ''"></v-img>
-        </v-avatar>
-        <span>{{ userStore.user.displayName }}</span>
-        <v-btn @click="logout" icon="mdi-logout" class="ml-3"></v-btn>
-      </div>
-    </v-app-bar>
-
-    <v-main>
-      <Login v-if="!userStore.user" />
-      <Chat v-else />
-    </v-main>
-  </v-app>
-</template>
-
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user';
 import { auth } from '@/firebase';
@@ -54,3 +33,24 @@ const logout = async () => {
   }
 };
 </script>
+
+<template>
+  <v-app>
+    <v-app-bar app color="primary" dark>
+      <v-toolbar-title>Firebase Chat</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <div v-if="userStore.user" class="d-flex align-center">
+        <v-avatar v-if="userStore.user.photoURL" size="36" class="mr-3">
+          <v-img :src="userStore.user.photoURL" :alt="userStore.user.displayName || ''"></v-img>
+        </v-avatar>
+        <span>{{ userStore.user.displayName }}</span>
+        <v-btn @click="logout" icon="mdi-logout" class="ml-3"></v-btn>
+      </div>
+    </v-app-bar>
+
+    <v-main>
+      <Login v-if="!userStore.user" />
+      <Chat v-else />
+    </v-main>
+  </v-app>
+</template>

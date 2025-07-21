@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import Login from '@/components/Login.vue';
+import Chat from '@/components/Chat.vue';
+</script>
+
 <template>
   <v-container>
     <v-row>
@@ -13,8 +18,3 @@
     </v-row>
   </v-container>
 </template>
-
-<script setup lang="ts">
-import Login from '@/components/Login.vue';
-import Chat from '@/components/Chat.vue';
-</script>

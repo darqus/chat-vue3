@@ -1,36 +1,3 @@
-<template>
-  <v-container class="fill-height">
-    <v-row class="h-100">
-      <v-col class="d-flex flex-column">
-        <div v-if="userStore.user" class="chat-container d-flex flex-column">
-          <div class="messages-list flex-grow-1">
-            <div v-for="message in messages" :key="message.id" class="message"
-              :class="{ 'my-message': message.uid === userStore.user.uid }">
-              <div class="message-content">
-                <div class="font-weight-bold">{{ message.displayName }}</div>
-                <div>{{ message.text }}</div>
-                <div class="text-caption text-grey">{{ formatTimestamp(message.createdAt) }}</div>
-              </div>
-            </div>
-          </div>
-          <v-form @submit.prevent="sendMessage" class="mt-4">
-            <v-text-field v-model="newMessage" label="Type a message..." outlined dense hide-details>
-              <template v-slot:append>
-                <v-btn type="submit" color="primary" icon="mdi-send" :disabled="!newMessage.trim()"></v-btn>
-              </template>
-            </v-text-field>
-          </v-form>
-        </div>
-        <div v-else class="fill-height d-flex justify-center align-center">
-          <v-alert type="info" border="start" prominent>
-            Please log in to see the chat.
-          </v-alert>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { db } from '@/firebase';
@@ -98,6 +65,40 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
   return new Date(timestamp.toDate()).toLocaleTimeString();
 };
 </script>
+
+<template>
+  <v-container class="fill-height">
+    <v-row class="h-100">
+      <v-col class="d-flex flex-column">
+        <div v-if="userStore.user" class="chat-container d-flex flex-column">
+          <div class="messages-list flex-grow-1">
+            <div
+v-for="message in messages" :key="message.id" class="message"
+              :class="{ 'my-message': message.uid === userStore.user.uid }">
+              <div class="message-content">
+                <div class="font-weight-bold">{{ message.displayName }}</div>
+                <div>{{ message.text }}</div>
+                <div class="text-caption text-grey">{{ formatTimestamp(message.createdAt) }}</div>
+              </div>
+            </div>
+          </div>
+          <v-form @submit.prevent="sendMessage" class="mt-4">
+            <v-text-field v-model="newMessage" label="Type a message..." outlined dense hide-details>
+              <template #append>
+                <v-btn type="submit" color="primary" icon="mdi-send" :disabled="!newMessage.trim()"></v-btn>
+              </template>
+            </v-text-field>
+          </v-form>
+        </div>
+        <div v-else class="fill-height d-flex justify-center align-center">
+          <v-alert type="info" border="start" prominent>
+            Please log in to see the chat.
+          </v-alert>
+        </div>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
 
 <style scoped>
 .chat-container {
