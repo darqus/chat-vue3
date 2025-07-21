@@ -239,6 +239,49 @@ const typingIndicatorText = computed(() => {
   return 'Несколько человек печатают...'
 })
 
+const parseMessageText = (text: string): string => {
+  if (!text) return ''
+
+  // Regex для поиска URL-адресов
+  const urlRegex =
+    /((?:https?:\/\/)[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&//=]*))/g
+  // Regex для проверки, является ли URL изображением
+  const imageRegex = /\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i
+
+  // Функция для экранирования HTML для предотвращения XSS-атак
+  const escapeHtml = (unsafe: string): string => {
+    return unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
+
+  // Разделяем текст по URL, чтобы обработать текстовые и ссылочные части отдельно
+  return text
+    .split(urlRegex)
+    .map((part, index) => {
+      // URL-адреса будут иметь нечетные индексы
+      if (index % 2 === 1) {
+        if (imageRegex.test(part)) {
+          return `<a href="${escapeHtml(
+            part
+          )}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(
+            part
+          )}" alt="Предпросмотр изображения" class="message-image-preview" loading="lazy" /></a>`
+        }
+        return `<a href="${escapeHtml(
+          part
+        )}" target="_blank" rel="noopener noreferrer">${escapeHtml(part)}</a>`
+      } else {
+        // Текстовые части экранируем и заменяем переносы строк на <br>
+        return escapeHtml(part).replace(/\n/g, '<br />')
+      }
+    })
+    .join('')
+}
+
 const toggleReaction = async (message: Message, emoji: string) => {
   if (!userStore.user) return
 
@@ -445,7 +488,10 @@ const scrollToMessage = (messageId: string) => {
 
               <div class="message-content">
                 <div class="font-weight-bold">{{ message.displayName }}</div>
-                <div>{{ message.text }}</div>
+                <div
+                  class="message-text-content"
+                  v-html="parseMessageText(message.text)"
+                ></div>
                 <div class="text-caption text-grey">
                   {{ formatTimestamp(message.createdAt) }}
                   <span v-if="message.isEdited" class="ml-1">(изменено)</span>
@@ -687,5 +733,20 @@ const scrollToMessage = (messageId: string) => {
 .reactions-container {
   margin-top: 8px;
   align-self: flex-start; /* Чтобы контейнер не растягивался на всю ширину */
+}
+
+/* :deep() используется для стилизации контента, сгенерированного через v-html */
+:deep(.message-text-content a) {
+  color: #1e88e5;
+  text-decoration: underline;
+}
+
+:deep(.message-image-preview) {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  margin-top: 8px;
+  display: block;
+  object-fit: cover;
 }
 </style>
