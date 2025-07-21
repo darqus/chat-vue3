@@ -15,6 +15,7 @@ import {
   Timestamp,
   FieldValue,
   doc,
+  updateDoc,
   setDoc,
   deleteDoc,
 } from 'firebase/firestore'
@@ -35,6 +36,7 @@ interface Message {
   displayName: string
   createdAt: Timestamp | FieldValue | null
   replyTo?: ReplyInfo
+  isEdited?: boolean
 }
 
 const isLoading = ref(true)
@@ -42,6 +44,10 @@ const typingUsers = ref<string[]>([])
 const messages = ref<Message[]>([])
 const newMessage = ref('')
 const replyingToMessage = ref<Message | null>(null)
+const editingMessage = ref<Message | null>(null)
+const editedText = ref<string>('')
+const messageToDelete = ref<Message | null>(null)
+const showDeleteConfirmDialog = ref(false)
 const messagesContainer = ref<HTMLElement | null>(null)
 let typingTimeout: number | null = null
 
@@ -77,6 +83,7 @@ onMounted(() => {
       displayName: doc.data().displayName,
       createdAt: doc.data().createdAt,
       replyTo: doc.data().replyTo,
+      isEdited: doc.data().isEdited,
     }))
     // Как только данные загружены, отключаем индикатор
     isLoading.value = false
@@ -190,6 +197,46 @@ const typingIndicatorText = computed(() => {
   return 'Несколько человек печатают...'
 })
 
+const startEditing = (message: Message) => {
+  editingMessage.value = message
+  editedText.value = message.text
+}
+
+const cancelEditing = () => {
+  editingMessage.value = null
+  editedText.value = ''
+}
+
+const saveEdit = async () => {
+  if (!editingMessage.value || !editedText.value.trim()) {
+    cancelEditing()
+    return
+  }
+  const messageRef = doc(db, 'messages', editingMessage.value.id)
+  await updateDoc(messageRef, {
+    text: editedText.value,
+    isEdited: true,
+  })
+  cancelEditing()
+}
+
+const promptDelete = (message: Message) => {
+  messageToDelete.value = message
+  showDeleteConfirmDialog.value = true
+}
+
+const cancelDelete = () => {
+  messageToDelete.value = null
+  showDeleteConfirmDialog.value = false
+}
+
+const confirmDelete = async () => {
+  if (!messageToDelete.value) return
+  const messageRef = doc(db, 'messages', messageToDelete.value.id)
+  await deleteDoc(messageRef)
+  cancelDelete()
+}
+
 const startReply = (message: Message) => {
   replyingToMessage.value = message
 }
@@ -237,6 +284,30 @@ const scrollToMessage = (messageId: string) => {
             class="message"
             :class="{ 'my-message': message.uid === userStore.user.uid }"
           >
+            <!-- Меню действий для своих сообщений -->
+            <v-menu
+              v-if="message.uid === userStore.user?.uid"
+              location="bottom end"
+            >
+              <template #activator="{ props }">
+                <v-btn
+                  class="message__menu-btn"
+                  icon="mdi-dots-vertical"
+                  variant="text"
+                  size="x-small"
+                  v-bind="props"
+                ></v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item @click="startEditing(message)">
+                  <v-list-item-title>Редактировать</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="promptDelete(message)">
+                  <v-list-item-title>Удалить</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+
             <v-btn
               class="message__reply-btn"
               icon="mdi-reply"
@@ -245,27 +316,51 @@ const scrollToMessage = (messageId: string) => {
               @click="startReply(message)"
             ></v-btn>
 
-            <!-- Блок с цитируемым сообщением -->
+            <!-- UI для редактирования сообщения -->
             <div
-              v-if="message.replyTo"
-              class="message__reply-to"
-              @click="scrollToMessage(message.replyTo.id)"
+              v-if="editingMessage?.id === message.id"
+              class="message-content"
             >
-              <div class="font-weight-bold text-caption">
-                {{ message.replyTo.displayName }}
-              </div>
-              <div class="text-caption text-truncate">
-                {{ message.replyTo.text }}
+              <v-textarea
+                v-model="editedText"
+                autofocus
+                auto-grow
+                rows="1"
+                hide-details
+                variant="underlined"
+                @keydown.enter.prevent="saveEdit"
+                @keydown.esc.prevent="cancelEditing"
+              ></v-textarea>
+              <div class="mt-2 text-caption">
+                Нажмите Esc для отмены, Enter для сохранения
               </div>
             </div>
 
-            <div class="message-content">
-              <div class="font-weight-bold">{{ message.displayName }}</div>
-              <div>{{ message.text }}</div>
-              <div class="text-caption text-grey">
-                {{ formatTimestamp(message.createdAt) }}
+            <!-- Обычное отображение сообщения -->
+            <template v-else>
+              <!-- Блок с цитируемым сообщением -->
+              <div
+                v-if="message.replyTo"
+                class="message__reply-to"
+                @click="scrollToMessage(message.replyTo.id)"
+              >
+                <div class="font-weight-bold text-caption">
+                  {{ message.replyTo.displayName }}
+                </div>
+                <div class="text-caption text-truncate">
+                  {{ message.replyTo.text }}
+                </div>
               </div>
-            </div>
+
+              <div class="message-content">
+                <div class="font-weight-bold">{{ message.displayName }}</div>
+                <div>{{ message.text }}</div>
+                <div class="text-caption text-grey">
+                  {{ formatTimestamp(message.createdAt) }}
+                  <span v-if="message.isEdited" class="ml-1">(изменено)</span>
+                </div>
+              </div>
+            </template>
           </div>
           <!-- Индикатор "печатает..." -->
           <div v-if="typingIndicatorText" class="typing-indicator pl-4">
@@ -281,6 +376,26 @@ const scrollToMessage = (messageId: string) => {
         Please log in to see the chat.
       </v-alert>
     </div>
+
+    <!-- Диалог подтверждения удаления -->
+    <v-dialog v-model="showDeleteConfirmDialog" max-width="400" persistent>
+      <v-card>
+        <v-card-title class="text-h6">Подтвердите удаление</v-card-title>
+        <v-card-text>
+          Вы уверены, что хотите удалить это сообщение? Это действие необратимо.
+          <v-sheet color="grey-lighten-4" class="pa-2 mt-2 rounded">
+            <div class="text-truncate">{{ messageToDelete?.text }}</div>
+          </v-sheet>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancelDelete">Отмена</v-btn>
+          <v-btn color="red-darken-1" variant="tonal" @click="confirmDelete"
+            >Удалить</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-main>
 
   <!-- v-footer с атрибутом 'app' закрепляется внизу экрана -->
@@ -370,6 +485,19 @@ const scrollToMessage = (messageId: string) => {
 
 .my-message .message-content {
   align-items: flex-end;
+}
+
+.message__menu-btn {
+  position: absolute;
+  top: 0px;
+  right: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 2; /* Выше чем reply-btn */
+}
+
+.message:hover .message__menu-btn {
+  opacity: 1;
 }
 
 .message__reply-btn {
