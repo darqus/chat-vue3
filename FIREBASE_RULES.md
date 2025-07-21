@@ -13,7 +13,8 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Разрешить запись с ограничениями:
-      allow write: if
+      // Разрешить создание и обновление с ограничениями
+      allow create, update: if
         // Только авторизованные пользователи
         request.auth != null
         // Сообщение должно быть строкой
@@ -24,6 +25,9 @@ service cloud.firestore {
         && request.resource.data.text.size() < 1000
         // UID должен соответствовать авторизованному пользователю
         && request.resource.data.uid == request.auth.uid;
+
+      // Разрешить удаление только своих сообщений
+      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
     }
   }
 }
