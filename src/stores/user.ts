@@ -149,6 +149,10 @@ export const useUserStore = defineStore('user', () => {
     return !!user.value
   }
 
+  function setUser(userData: UserState) {
+    user.value = userData;
+  }
+
   return {
     user,
     error,
@@ -159,5 +163,6 @@ export const useUserStore = defineStore('user', () => {
     isAuthenticated,
     unsubscribe,
     unsubscribeMessages,
+    setUser,
   }
 })
