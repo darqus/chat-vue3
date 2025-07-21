@@ -1,10 +1,3 @@
-# Firebase Firestore Rules Documentation
-
-## Security Rules for Chat Application
-
-Для безопасной работы чат-приложения с Firestore, установите следующие правила в Firebase Console (Firestore -> Rules):
-
-```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -12,7 +5,6 @@ service cloud.firestore {
       // Разрешить чтение только авторизованным пользователям
       allow read: if request.auth != null;
 
-      // Разрешить запись с ограничениями:
       // Разрешить создание и обновление с ограничениями
       allow create, update: if
         // Только авторизованные пользователи
@@ -30,7 +22,7 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
     }
     
-    // Правила для коллекции typingStatus
+    // Добавляем правила для коллекции typingStatus
     match /typingStatus/{userId} {
       // Разрешить чтение всем авторизованным пользователям
       allow read: if request.auth != null;
@@ -40,21 +32,3 @@ service cloud.firestore {
     }
   }
 }
-```
-
-## Как обновить правила
-
-1. Откройте [Firebase Console](https://console.firebase.google.com/)
-2. Выберите ваш проект
-3. Перейдите в раздел "Firestore Database"
-4. Откройте вкладку "Правила"
-5. Вставьте приведенные выше правила
-6. Нажмите "Опубликовать"
-
-## Объяснение правил
-
-- `allow read`: Ограничивает чтение сообщений только авторизованными пользователями
-- `allow write`: Обеспечивает:
-  - Авторизацию пользователя
-  - Валидацию типа и длины сообщения
-  - Проверку соответствия UID отправителя и авторизованного пользователя
