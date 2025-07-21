@@ -37,6 +37,7 @@ interface Message {
   createdAt: Timestamp | FieldValue | null
   replyTo?: ReplyInfo
   isEdited?: boolean
+  reactions?: { [emoji: string]: string[] }
 }
 
 const isLoading = ref(true)
@@ -84,6 +85,7 @@ onMounted(() => {
       createdAt: doc.data().createdAt,
       replyTo: doc.data().replyTo,
       isEdited: doc.data().isEdited,
+      reactions: doc.data().reactions,
     }))
     // Как только данные загружены, отключаем индикатор
     isLoading.value = false
@@ -197,6 +199,30 @@ const typingIndicatorText = computed(() => {
   return 'Несколько человек печатают...'
 })
 
+const toggleReaction = async (message: Message, emoji: string) => {
+  if (!userStore.user) return
+
+  const messageRef = doc(db, 'messages', message.id)
+  const currentUserUid = userStore.user.uid
+  const reactions = { ...(message.reactions || {}) }
+
+  // Проверяем, есть ли уже реакция от этого пользователя
+  if (reactions[emoji]?.includes(currentUserUid)) {
+    // Удаляем реакцию
+    reactions[emoji] = reactions[emoji].filter((uid) => uid !== currentUserUid)
+    if (reactions[emoji].length === 0) {
+      delete reactions[emoji]
+    }
+  } else {
+    // Добавляем реакцию
+    if (!reactions[emoji]) {
+      reactions[emoji] = []
+    }
+    reactions[emoji].push(currentUserUid)
+  }
+  await updateDoc(messageRef, { reactions })
+}
+
 const startEditing = (message: Message) => {
   editingMessage.value = message
   editedText.value = message.text
@@ -308,6 +334,30 @@ const scrollToMessage = (messageId: string) => {
               </v-list>
             </v-menu>
 
+            <!-- Кнопка добавления реакции -->
+            <v-menu location="top" close-on-content-click>
+              <template #activator="{ props }">
+                <v-btn
+                  class="message__add-reaction-btn"
+                  icon="mdi-emoticon-happy-outline"
+                  variant="text"
+                  size="x-small"
+                  v-bind="props"
+                ></v-btn>
+              </template>
+              <v-sheet class="d-flex pa-1 rounded">
+                <v-btn
+                  v-for="emoji in ['👍', '❤️', '😂', '😮', '😢', '🙏']"
+                  :key="emoji"
+                  icon
+                  variant="text"
+                  size="small"
+                  @click="toggleReaction(message, emoji)"
+                  >{{ emoji }}</v-btn
+                >
+              </v-sheet>
+            </v-menu>
+
             <v-btn
               class="message__reply-btn"
               icon="mdi-reply"
@@ -359,6 +409,26 @@ const scrollToMessage = (messageId: string) => {
                   {{ formatTimestamp(message.createdAt) }}
                   <span v-if="message.isEdited" class="ml-1">(изменено)</span>
                 </div>
+              </div>
+
+              <!-- Отображение реакций -->
+              <div
+                v-if="
+                  message.reactions && Object.keys(message.reactions).length > 0
+                "
+                class="reactions-container"
+              >
+                <v-chip
+                  v-for="(uids, emoji) in message.reactions"
+                  :key="emoji"
+                  class="mr-1 mb-1"
+                  size="small"
+                  :variant="
+                    uids.includes(userStore.user?.uid) ? 'tonal' : 'outlined'
+                  "
+                  @click="toggleReaction(message, emoji)"
+                  >{{ emoji }} {{ uids.length }}</v-chip
+                >
               </div>
             </template>
           </div>
@@ -500,6 +570,20 @@ const scrollToMessage = (messageId: string) => {
   opacity: 1;
 }
 
+.message__add-reaction-btn {
+  position: absolute;
+  bottom: -12px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 1;
+  background-color: white;
+  border-radius: 50%;
+}
+
+.message:hover .message__add-reaction-btn {
+  opacity: 1;
+}
+
 .message__reply-btn {
   position: absolute;
   top: -8px;
@@ -515,9 +599,15 @@ const scrollToMessage = (messageId: string) => {
 .message.my-message .message__reply-btn {
   left: -8px;
 }
+.message.my-message .message__add-reaction-btn {
+  left: 20px;
+}
 
 .message:not(.my-message) .message__reply-btn {
   right: -8px;
+}
+.message:not(.my-message) .message__add-reaction-btn {
+  right: 20px;
 }
 
 .message__reply-to {
@@ -537,5 +627,10 @@ const scrollToMessage = (messageId: string) => {
   height: 24px; /* Резервируем место, чтобы чат не "прыгал" */
   display: flex;
   align-items: center;
+}
+
+.reactions-container {
+  margin-top: 8px;
+  align-self: flex-start; /* Чтобы контейнер не растягивался на всю ширину */
 }
 </style>
