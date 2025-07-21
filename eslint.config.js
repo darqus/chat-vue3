@@ -24,7 +24,7 @@ export default [
   // Правила для TypeScript
   ...tseslint.configs.recommended,
   // Правила для Vue 3
-  ...pluginVue.configs["flat/vue3-recommended"], // Используйте "flat/..." для ESLint v9
+  ...pluginVue.configs['flat/strongly-recommended'],
   {
     files: ["**/*.vue"],
     languageOptions: {
