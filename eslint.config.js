@@ -23,7 +23,7 @@ export default [
   // Правила для TypeScript
   ...tseslint.configs.recommended,
   // Правила для Vue 3
-  ...pluginVue.configs["flat/vue3-recommended"],
+  ...pluginVue.configs["vue3-recommended"],
   {
     files: ["**/*.vue"],
     languageOptions: {
