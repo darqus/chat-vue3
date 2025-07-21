@@ -37,7 +37,7 @@ interface Message {
   createdAt: Timestamp | FieldValue | null
   replyTo?: ReplyInfo
   isEdited?: boolean
-  reactions?: { [emoji: string]: string[] }
+  reactions?: { [emoji: string]: { [uid: string]: string } } // emoji -> { uid: displayName }
 }
 
 const isLoading = ref(true)
@@ -204,21 +204,22 @@ const toggleReaction = async (message: Message, emoji: string) => {
 
   const messageRef = doc(db, 'messages', message.id)
   const currentUserUid = userStore.user.uid
+  const currentUserDisplayName = userStore.user.displayName || 'Аноним'
   const reactions = { ...(message.reactions || {}) }
 
   // Проверяем, есть ли уже реакция от этого пользователя
-  if (reactions[emoji]?.includes(currentUserUid)) {
+  if (reactions[emoji]?.[currentUserUid]) {
     // Удаляем реакцию
-    reactions[emoji] = reactions[emoji].filter((uid) => uid !== currentUserUid)
-    if (reactions[emoji].length === 0) {
+    delete reactions[emoji][currentUserUid]
+    if (Object.keys(reactions[emoji]).length === 0) {
       delete reactions[emoji]
     }
   } else {
     // Добавляем реакцию
     if (!reactions[emoji]) {
-      reactions[emoji] = []
+      reactions[emoji] = {}
     }
-    reactions[emoji].push(currentUserUid)
+    reactions[emoji][currentUserUid] = currentUserDisplayName
   }
   await updateDoc(messageRef, { reactions })
 }
@@ -418,17 +419,31 @@ const scrollToMessage = (messageId: string) => {
                 "
                 class="reactions-container"
               >
-                <v-chip
-                  v-for="(uids, emoji) in message.reactions"
+                <v-tooltip
+                  v-for="(reactors, emoji) in message.reactions"
                   :key="emoji"
-                  class="mr-1 mb-1"
-                  size="small"
-                  :variant="
-                    uids.includes(userStore.user?.uid) ? 'tonal' : 'outlined'
-                  "
-                  @click="toggleReaction(message, emoji)"
-                  >{{ emoji }} {{ uids.length }}</v-chip
+                  location="top"
                 >
+                  <template #activator="{ props }">
+                    <v-chip
+                      v-bind="props"
+                      class="mr-1 mb-1"
+                      size="small"
+                      :variant="
+                        Object.keys(reactors).includes(userStore.user?.uid)
+                          ? 'tonal'
+                          : 'outlined'
+                      "
+                      @click="toggleReaction(message, String(emoji))"
+                      >{{ emoji }} {{ Object.keys(reactors).length }}</v-chip
+                    >
+                  </template>
+                  <div>
+                    <div v-for="name in Object.values(reactors)" :key="name">
+                      {{ name }}
+                    </div>
+                  </div>
+                </v-tooltip>
               </div>
             </template>
           </div>
