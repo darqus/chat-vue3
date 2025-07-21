@@ -26,6 +26,7 @@ interface Message {
   createdAt: Timestamp | null
 }
 
+const isLoading = ref(true)
 const messages = ref<Message[]>([])
 const newMessage = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
@@ -56,6 +57,8 @@ onMounted(() => {
       displayName: doc.data().displayName,
       createdAt: doc.data().createdAt,
     }))
+    // Как только данные загружены, отключаем индикатор
+    isLoading.value = false
   })
 })
 
@@ -85,28 +88,39 @@ const formatTimestamp = (timestamp: Timestamp | null): string => {
 
 <template>
   <!-- v-main будет занимать всё доступное пространство между другими app-компонентами (например, v-footer) -->
-  <v-main>
-    <div
-      v-if="userStore.user"
-      ref="messagesContainer"
-      class="messages-list-wrapper"
-    >
-      <v-container>
-        <div
-          v-for="message in messages"
-          :key="message.id"
-          class="message"
-          :class="{ 'my-message': message.uid === userStore.user.uid }"
-        >
-          <div class="message-content">
-            <div class="font-weight-bold">{{ message.displayName }}</div>
-            <div>{{ message.text }}</div>
-            <div class="text-caption text-grey">
-              {{ formatTimestamp(message.createdAt) }}
+  <v-main class="fill-height">
+    <div v-if="userStore.user" class="fill-height">
+      <!-- 1. Показываем индикатор, пока isLoading === true -->
+      <div
+        v-if="isLoading"
+        class="fill-height d-flex justify-center align-center"
+      >
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="64"
+        ></v-progress-circular>
+      </div>
+
+      <!-- 2. Показываем список сообщений, когда загрузка завершена -->
+      <div v-else ref="messagesContainer" class="messages-list-wrapper">
+        <v-container>
+          <div
+            v-for="message in messages"
+            :key="message.id"
+            class="message"
+            :class="{ 'my-message': message.uid === userStore.user.uid }"
+          >
+            <div class="message-content">
+              <div class="font-weight-bold">{{ message.displayName }}</div>
+              <div>{{ message.text }}</div>
+              <div class="text-caption text-grey">
+                {{ formatTimestamp(message.createdAt) }}
+              </div>
             </div>
           </div>
-        </div>
-      </v-container>
+        </v-container>
+      </div>
     </div>
     <div v-else class="fill-height d-flex justify-center align-center">
       <v-alert type="info" border="start" prominent>
