@@ -43,4 +43,4 @@ export default [
 
   // Отключает правила ESLint, которые могут конфликтовать с Prettier.
   eslintConfigPrettier,
-];
+]

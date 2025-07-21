@@ -1,32 +1,32 @@
 <script setup lang="ts">
 defineOptions({
   name: 'LoginForm',
-});
+})
 
-import { auth } from '@/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { useUserStore } from '@/stores/user';
+import { auth } from '@/firebase'
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { useUserStore } from '@/stores/user'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 const loginWithGoogle = async () => {
-  const provider = new GoogleAuthProvider();
+  const provider = new GoogleAuthProvider()
   try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    const result = await signInWithPopup(auth, provider)
+    const user = result.user
     if (user) {
       userStore.setUser({
         uid: user.uid,
         displayName: user.displayName,
         email: user.email,
         photoURL: user.photoURL,
-      });
+      })
     }
   } catch (error) {
-    console.error('Login failed: ', error);
+    console.error('Login failed: ', error)
     // You might want to show an error message to the user here
   }
-};
+}
 </script>
 
 <template>

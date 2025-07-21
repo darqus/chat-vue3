@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useUserStore } from '@/stores/user';
-import { auth } from '@/firebase';
-import { onIdTokenChanged, signOut } from 'firebase/auth';
-import { onUnmounted } from 'vue';
-import Login from './components/LoginForm.vue';
-import Chat from './components/ChatComponent.vue';
+import { useUserStore } from '@/stores/user'
+import { auth } from '@/firebase'
+import { onIdTokenChanged, signOut } from 'firebase/auth'
+import { onUnmounted } from 'vue'
+import Login from './components/LoginForm.vue'
+import Chat from './components/ChatComponent.vue'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 const unsubscribe = onIdTokenChanged(auth, (user) => {
   if (user) {
@@ -15,23 +15,23 @@ const unsubscribe = onIdTokenChanged(auth, (user) => {
       displayName: user.displayName,
       email: user.email,
       photoURL: user.photoURL,
-    });
+    })
   } else {
-    userStore.clearUser();
+    userStore.clearUser()
   }
-});
+})
 
 onUnmounted(() => {
-  unsubscribe();
-});
+  unsubscribe()
+})
 
 const logout = async () => {
   try {
-    await signOut(auth);
+    await signOut(auth)
   } catch (error) {
-    console.error('Error signing out: ', error);
+    console.error('Error signing out: ', error)
   }
-};
+}
 </script>
 
 <template>

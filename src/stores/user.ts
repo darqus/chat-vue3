@@ -1,23 +1,23 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 interface UserState {
-  uid: string;
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
+  uid: string
+  displayName: string | null
+  email: string | null
+  photoURL: string | null
 }
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref<UserState | null>(null);
+  const user = ref<UserState | null>(null)
 
   function setUser(newUser: UserState | null) {
-    user.value = newUser;
+    user.value = newUser
   }
 
   function clearUser() {
-    user.value = null;
+    user.value = null
   }
 
-  return { user, setUser, clearUser };
-});
+  return { user, setUser, clearUser }
+})

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 defineOptions({
   name: 'ChatComponent',
-});
+})
 
-import { ref, onMounted, onUnmounted } from 'vue';
-import { db } from '@/firebase';
+import { ref, onMounted, onUnmounted } from 'vue'
+import { db } from '@/firebase'
 import {
   collection,
   query,
@@ -13,26 +13,26 @@ import {
   serverTimestamp,
   orderBy,
   Timestamp,
-} from 'firebase/firestore';
-import { useUserStore } from '@/stores/user';
+} from 'firebase/firestore'
+import { useUserStore } from '@/stores/user'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 interface Message {
-  id: string;
-  text: string;
-  uid: string;
-  displayName: string;
-  createdAt: Timestamp | null;
+  id: string
+  text: string
+  uid: string
+  displayName: string
+  createdAt: Timestamp | null
 }
 
-const messages = ref<Message[]>([]);
-const newMessage = ref('');
+const messages = ref<Message[]>([])
+const newMessage = ref('')
 
-const messagesCollection = collection(db, 'messages');
-const q = query(messagesCollection, orderBy('createdAt', 'asc'));
+const messagesCollection = collection(db, 'messages')
+const q = query(messagesCollection, orderBy('createdAt', 'asc'))
 
-let unsubscribe: () => void;
+let unsubscribe: () => void
 
 onMounted(() => {
   unsubscribe = onSnapshot(q, (snapshot) => {
@@ -42,15 +42,15 @@ onMounted(() => {
       uid: doc.data().uid,
       displayName: doc.data().displayName,
       createdAt: doc.data().createdAt,
-    }));
-  });
-});
+    }))
+  })
+})
 
 onUnmounted(() => {
   if (unsubscribe) {
-    unsubscribe();
+    unsubscribe()
   }
-});
+})
 
 const sendMessage = async () => {
   if (newMessage.value.trim() && userStore.user) {
@@ -59,15 +59,15 @@ const sendMessage = async () => {
       uid: userStore.user.uid,
       displayName: userStore.user.displayName || 'Anonymous',
       createdAt: serverTimestamp(),
-    });
-    newMessage.value = '';
+    })
+    newMessage.value = ''
   }
-};
+}
 
 const formatTimestamp = (timestamp: Timestamp | null): string => {
-  if (!timestamp) return 'Sending...';
-  return new Date(timestamp.toDate()).toLocaleTimeString();
-};
+  if (!timestamp) return 'Sending...'
+  return new Date(timestamp.toDate()).toLocaleTimeString()
+}
 </script>
 
 <template>
