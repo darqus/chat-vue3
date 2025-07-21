@@ -76,19 +76,42 @@ let unsubscribe: () => void
 let unsubscribeTyping: () => void
 
 onMounted(() => {
+  // Более эффективный слушатель, который обрабатывает изменения по отдельности
   unsubscribe = onSnapshot(q, (snapshot) => {
-    messages.value = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      text: doc.data().text,
-      uid: doc.data().uid,
-      displayName: doc.data().displayName,
-      createdAt: doc.data().createdAt,
-      replyTo: doc.data().replyTo,
-      isEdited: doc.data().isEdited,
-      reactions: doc.data().reactions,
-    }))
-    // Как только данные загружены, отключаем индикатор
-    isLoading.value = false
+    snapshot.docChanges().forEach((change) => {
+      const docData = change.doc.data()
+      const messageId = change.doc.id
+
+      if (change.type === 'added') {
+        if (!messages.value.some((m) => m.id === messageId)) {
+          messages.value.push({ id: messageId, ...docData } as Message)
+
+          // Воспроизводим звук, если сообщение не от нас и вкладка неактивна
+          if (
+            !isLoading.value &&
+            docData.uid !== userStore.user?.uid &&
+            document.hidden
+          ) {
+            playSoundNotification()
+          }
+        }
+      }
+      if (change.type === 'modified') {
+        const index = messages.value.findIndex((m) => m.id === messageId)
+        if (index !== -1) {
+          // Обновляем только измененное сообщение, сохраняя объект
+          messages.value[index] = { ...messages.value[index], ...docData }
+        }
+      }
+      if (change.type === 'removed') {
+        messages.value = messages.value.filter((m) => m.id !== messageId)
+      }
+    })
+
+    // Отключаем индикатор загрузки после обработки первого снимка данных
+    if (isLoading.value) {
+      isLoading.value = false
+    }
   })
 
   // Слушатель для статуса "печатает"
@@ -160,6 +183,23 @@ const sendMessage = async () => {
 const formatTimestamp = (timestamp: Timestamp | FieldValue | null): string => {
   if (!timestamp || !('toDate' in timestamp)) return 'Sending...'
   return new Date(timestamp.toDate()).toLocaleTimeString()
+}
+
+/**
+ * Воспроизводит звук уведомления.
+ * Убедитесь, что у вас есть файл /public/notification.mp3
+ */
+const playSoundNotification = () => {
+  // Путь к файлу относительно корневой папки public
+  const audio = new Audio('/notification.mp3')
+  audio.play().catch((error) => {
+    // Современные браузеры блокируют автовоспроизведение звука до первого
+    // взаимодействия пользователя со страницей (например, клика).
+    console.warn(
+      'Воспроизведение звука заблокировано браузером. Требуется взаимодействие с пользователем.',
+      error
+    )
+  })
 }
 
 const updateTypingStatus = async (isTyping: boolean) => {
