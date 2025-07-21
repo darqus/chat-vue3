@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "deploy": "npm run build && firebase deploy --only hosting",
     "preview": "vite preview",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -29,6 +30,7 @@
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.31.0",
+    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.27.0",
     "globals": "^15.8.0",
     "typescript": "~5.8.3",
