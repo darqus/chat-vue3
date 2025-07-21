@@ -10,14 +10,18 @@ const userStore = useUserStore()
 
 const unsubscribe = onIdTokenChanged(auth, (user) => {
   if (user) {
-    userStore.setUser({
+    userStore.user = {
       uid: user.uid,
       displayName: user.displayName,
       email: user.email,
       photoURL: user.photoURL,
-    })
+    }
+    userStore.error = null
   } else {
-    userStore.clearUser()
+    userStore.user = null
+    if (userStore.unsubscribeMessages) {
+      userStore.unsubscribeMessages()
+    }
   }
 })
 
