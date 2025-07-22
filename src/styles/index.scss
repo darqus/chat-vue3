@@ -1,0 +1,33 @@
+// Базовые стили
+@use 'base/variables';
+@use 'base/mixins';
+@use 'base/reset';
+
+// Компоненты
+@use 'components/buttons';
+@use 'components/links';
+
+// Глобальные стили
+:root {
+  color-scheme: light dark;
+  color: map-get(variables.$dark-scheme, text);
+  background-color: map-get(variables.$dark-scheme, background);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: map-get(variables.$light-scheme, text);
+    background-color: map-get(variables.$light-scheme, background);
+  }
+}
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.card {
+  padding: 2em;
+}

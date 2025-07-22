@@ -1,0 +1,15 @@
+a {
+  font-weight: $font-weight-medium;
+  color: map-get($dark-scheme, primary);
+  text-decoration: inherit;
+
+  &:hover {
+    color: map-get($dark-scheme, primary-hover);
+  }
+}
+
+@include media-light-scheme {
+  a:hover {
+    color: map-get($light-scheme, primary-hover);
+  }
+}

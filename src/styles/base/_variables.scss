@@ -1,0 +1,25 @@
+// Цветовая схема
+$dark-scheme: (
+  text: rgba(255, 255, 255, 0.87),
+  background: #242424,
+  primary: #646cff,
+  primary-hover: #535bf2,
+  button-bg: #1a1a1a,
+);
+
+$light-scheme: (
+  text: #213547,
+  background: #ffffff,
+  primary-hover: #747bff,
+  button-bg: #f9f9f9,
+);
+
+// Шрифты
+$font-stack: system-ui, Avenir, Helvetica, Arial, sans-serif;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+
+// Размеры
+$base-line-height: 1.5;
+$space-unit: 1em;
+$border-radius: 8px;
