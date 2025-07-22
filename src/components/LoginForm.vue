@@ -45,10 +45,11 @@ const loginWithGoogle = async () => {
           <v-card-actions class="justify-center">
             <v-btn
               @click="loginWithGoogle"
-              color="red"
+              color="primary"
               dark
               large
               block
+              variant="elevated"
               prepend-icon="mdi-google"
             >
               Login with Google
