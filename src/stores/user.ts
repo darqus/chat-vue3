@@ -59,36 +59,21 @@ export const useUserStore = defineStore('user', () => {
     const q = query(messagesCollection, orderBy('createdAt', 'asc'))
 
     unsubscribeMessages.value = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        const docData = change.doc.data()
-        const messageId = change.doc.id
-
-        if (change.type === 'added') {
-          if (!messages.value.some((m) => m.id === messageId)) {
-            const newMessage = {
-              id: messageId,
-              text: typeof docData.text === 'string' ? docData.text : '',
-              uid: typeof docData.uid === 'string' ? docData.uid : '',
-              displayName:
-                typeof docData.displayName === 'string'
-                  ? docData.displayName
-                  : 'Anonymous',
-              createdAt: docData.createdAt || null,
-              ...(docData.replyTo ? { replyTo: docData.replyTo } : {}),
-              ...(docData.isEdited ? { isEdited: docData.isEdited } : {}),
-              ...(docData.reactions ? { reactions: docData.reactions } : {}),
-            }
-            messages.value.push(newMessage)
-          }
-        }
-        if (change.type === 'modified') {
-          const index = messages.value.findIndex((m) => m.id === messageId)
-          if (index !== -1) {
-            messages.value[index] = { ...messages.value[index], ...docData }
-          }
-        }
-        if (change.type === 'removed') {
-          messages.value = messages.value.filter((m) => m.id !== messageId)
+      // Обновляем весь массив сообщений при каждом снимке
+      messages.value = snapshot.docs.map((doc) => {
+        const docData = doc.data()
+        return {
+          id: doc.id,
+          text: typeof docData.text === 'string' ? docData.text : '',
+          uid: typeof docData.uid === 'string' ? docData.uid : '',
+          displayName:
+            typeof docData.displayName === 'string'
+              ? docData.displayName
+              : 'Anonymous',
+          createdAt: docData.createdAt || null,
+          ...(docData.replyTo ? { replyTo: docData.replyTo } : {}),
+          ...(docData.isEdited ? { isEdited: docData.isEdited } : {}),
+          ...(docData.reactions ? { reactions: docData.reactions } : {}),
         }
       })
     })
