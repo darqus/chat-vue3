@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import { useThemeStore } from '../stores/themeStore'
 import ChatWindow from '../components/ChatWindow.vue'
 import { Timestamp } from 'firebase/firestore'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const chatStore = useChatStore()
 const themeStore = useThemeStore()
@@ -41,6 +43,31 @@ function selectChat(chatId: string) {
 
 function toggleTheme() {
   themeStore.toggleTheme()
+}
+
+async function handleLogout() {
+  try {
+    // Сначала сохраняем userId перед logout
+    const userId = authStore.user?.id
+
+    if (userId) {
+      // Update user offline status before logout
+      await authStore.updateOnlineStatus(false)
+    }
+
+    await authStore.logout()
+    await router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+    // Даже если есть ошибка, попытаемся перейти на страницу входа
+    try {
+      await router.push('/login')
+    } catch (routerError) {
+      console.error('Router error:', routerError)
+      // Принудительный редирект через window.location если роутер не работает
+      window.location.href = '/login'
+    }
+  }
 }
 
 function formatTime(date: Date | Timestamp): string {
@@ -118,7 +145,7 @@ watch(
                     {{ isDark ? 'Светлая тема' : 'Темная тема' }}
                   </v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="authStore.logout">
+                <v-list-item @click="handleLogout">
                   <v-list-item-title>
                     <v-icon>mdi-logout</v-icon>
                     Выйти

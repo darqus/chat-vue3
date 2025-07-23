@@ -120,14 +120,8 @@ export const useAuthStore = defineStore('auth', () => {
   // Sign Out
   async function logout() {
     try {
-      if (user.value) {
-        // Update user offline status
-        await updateDoc(doc(db, 'users', user.value.id), {
-          isOnline: false,
-          lastSeen: serverTimestamp(),
-        })
-      }
-
+      // Просто выходим из Firebase Auth, не обновляя статус в Firestore
+      // Статус будет обновлен через updateOnlineStatus если нужно
       await signOut(auth)
       user.value = null
       notify.info('Вы вышли из системы')
@@ -137,6 +131,7 @@ export const useAuthStore = defineStore('auth', () => {
         'Ошибка выхода: ' +
           (err instanceof Error ? err.message : 'Неизвестная ошибка')
       )
+      throw err
     }
   }
 
