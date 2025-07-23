@@ -36,7 +36,7 @@ const activeChat = computed(() => chatStore.activeChat)
 const totalUnreadCount = computed(() => chatStore.totalUnreadCount)
 
 function selectChat(chatId: string) {
-  chatStore.activeChatId = chatId
+  chatStore.setActiveChatId(chatId)
   chatStore.setupMessageListener(chatId)
   drawer.value = false
 }
@@ -54,6 +54,9 @@ async function handleLogout() {
       // Update user offline status before logout
       await authStore.updateOnlineStatus(false)
     }
+
+    // Clear saved active chat state
+    chatStore.clearSavedActiveChat()
 
     await authStore.logout()
     await router.push('/login')
@@ -91,8 +94,20 @@ onMounted(() => {
     chatStore.setupChatsListener(authStore.user.id)
     chatStore.setupUsersListener()
 
-    // Select general chat by default
-    selectChat('general')
+    // Restore saved active chat or select general chat by default
+    const savedChatId = chatStore.getSavedActiveChatId()
+    if (savedChatId) {
+      // Validate that the saved chat exists (check mock data or wait for real data)
+      const chatExists = chats.value.some((chat) => chat.id === savedChatId)
+      if (chatExists || savedChatId === 'general') {
+        selectChat(savedChatId)
+      } else {
+        // If saved chat doesn't exist, fall back to general
+        selectChat('general')
+      }
+    } else {
+      selectChat('general')
+    }
   }
 })
 
@@ -104,9 +119,14 @@ watch(
       chatStore.setupChatsListener(user.id)
       chatStore.setupUsersListener()
 
-      // Select general chat by default if no chat is selected
+      // Restore saved active chat or select general chat by default if no chat is selected
       if (!chatStore.activeChatId) {
-        selectChat('general')
+        const savedChatId = chatStore.getSavedActiveChatId()
+        if (savedChatId) {
+          selectChat(savedChatId)
+        } else {
+          selectChat('general')
+        }
       }
     }
   }

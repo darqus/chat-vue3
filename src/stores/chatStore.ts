@@ -60,13 +60,27 @@ export const useChatStore = defineStore('chat', () => {
   const messages = ref<ChatMessage[]>([])
   const chats = ref<Chat[]>([])
   const users = ref<ChatUser[]>([])
-  const activeChatId = ref<string | null>(null)
+
+  // Load saved active chat from localStorage
+  const savedChatId = localStorage.getItem('chat-app-active-chat-id')
+  const activeChatId = ref<string | null>(savedChatId || null)
+
   const typingUsers = ref<Set<string>>(new Set())
   const isTyping = ref(false)
 
+  // Save active chat to localStorage whenever it changes
+  function setActiveChatId(chatId: string | null) {
+    activeChatId.value = chatId
+    if (chatId) {
+      localStorage.setItem('chat-app-active-chat-id', chatId)
+    } else {
+      localStorage.removeItem('chat-app-active-chat-id')
+    }
+  }
+
   // Setup real-time message listener
   function setupMessageListener(chatId: string) {
-    activeChatId.value = chatId
+    setActiveChatId(chatId)
     messages.value = [] // Clear previous messages
 
     // Для общего чата используем существующую структуру без chatId
@@ -301,6 +315,28 @@ export const useChatStore = defineStore('chat', () => {
     return users.value
   })
 
+  // Get saved active chat ID
+  function getSavedActiveChatId(): string | null {
+    return localStorage.getItem('chat-app-active-chat-id')
+  }
+
+  // Clear saved active chat
+  function clearSavedActiveChat() {
+    localStorage.removeItem('chat-app-active-chat-id')
+    setActiveChatId(null)
+  }
+
+  // Initialize store with saved state
+  function initializeStore() {
+    const savedChatId = getSavedActiveChatId()
+    if (savedChatId) {
+      activeChatId.value = savedChatId
+    }
+  }
+
+  // Initialize on store creation
+  initializeStore()
+
   return {
     messages,
     chats,
@@ -322,5 +358,8 @@ export const useChatStore = defineStore('chat', () => {
     addTypingUser,
     removeTypingUser,
     getUserById,
+    setActiveChatId,
+    getSavedActiveChatId,
+    clearSavedActiveChat,
   }
 })
