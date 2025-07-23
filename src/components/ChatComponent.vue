@@ -328,13 +328,12 @@ const scrollToMessage = (messageId: string) => {
 </script>
 
 <template>
-  <!-- v-main будет занимать всё доступное пространство между другими app-компонентами (например, v-footer) -->
-  <v-main>
+  <div class="chat-component">
     <div v-if="userStore.user">
       <!-- 1. Показываем индикатор, пока isLoading === true -->
       <div
         v-if="isLoading"
-        class="-fill-height d-flex justify-center align-center"
+        class="fill-height d-flex justify-center align-center"
       >
         <v-progress-circular
           indeterminate
@@ -564,15 +563,9 @@ const scrollToMessage = (messageId: string) => {
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-main>
+  </div>
 
-  <!-- v-footer с атрибутом 'app' закрепляется внизу экрана -->
-  <v-footer
-    v-if="userStore.user"
-    app
-    class="pa-0 d-flex flex-column"
-    style="height: auto"
-  >
+  <div v-if="userStore.user" class="chat-input-section">
     <!-- Панель контекста ответа -->
     <v-sheet
       v-if="replyingToMessage"
@@ -619,5 +612,5 @@ const scrollToMessage = (messageId: string) => {
         :disabled="!newMessage.trim()"
       ></v-btn>
     </v-form>
-  </v-footer>
+  </div>
 </template>

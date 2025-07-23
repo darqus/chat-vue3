@@ -12,7 +12,7 @@ const authStore = useAuthStore()
 const chatStore = useChatStore()
 const themeStore = useThemeStore()
 
-const drawer = ref(false)
+const drawer = ref(true) // Изменяем на true, чтобы drawer был открыт по умолчанию
 
 const isDark = computed(() => themeStore.isDark)
 
@@ -135,8 +135,33 @@ watch(
 
 <template>
   <v-layout>
+    <!-- App Bar -->
+    <v-app-bar color="primary" prominent app>
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
+
+      <v-toolbar-title>
+        {{ activeChat?.name || 'Chat App' }}
+      </v-toolbar-title>
+
+      <template #append>
+        <v-badge
+          v-if="totalUnreadCount > 0"
+          :content="totalUnreadCount"
+          color="error"
+        >
+          <v-btn icon="mdi-bell" />
+        </v-badge>
+
+        <v-btn @click="toggleTheme">
+          <v-icon>{{
+            isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'
+          }}</v-icon>
+        </v-btn>
+      </template>
+    </v-app-bar>
+
     <!-- Navigation Drawer -->
-    <v-navigation-drawer v-model="drawer" temporary width="300">
+    <v-navigation-drawer v-model="drawer" app width="300" class="chat-drawer">
       <v-list>
         <v-list-item
           :prepend-avatar="authStore.user?.photoURL || undefined"
@@ -255,33 +280,8 @@ watch(
       </v-list>
     </v-navigation-drawer>
 
-    <!-- App Bar -->
-    <v-app-bar color="primary" prominent>
-      <v-app-bar-nav-icon @click="drawer = !drawer" />
-
-      <v-toolbar-title>
-        {{ activeChat?.name || 'Chat App' }}
-      </v-toolbar-title>
-
-      <template #append>
-        <v-badge
-          v-if="totalUnreadCount > 0"
-          :content="totalUnreadCount"
-          color="error"
-        >
-          <v-btn icon="mdi-bell" />
-        </v-badge>
-
-        <v-btn @click="toggleTheme">
-          <v-icon>{{
-            isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'
-          }}</v-icon>
-        </v-btn>
-      </template>
-    </v-app-bar>
-
     <!-- Main Content -->
-    <v-main>
+    <v-main app>
       <ChatWindow v-if="chatStore.activeChatId" />
       <v-container v-else>
         <v-row align="center" justify="center">
