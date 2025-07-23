@@ -67,10 +67,12 @@ async function signInWithEmail() {
               color="primary"
               size="large"
               block
+              variant="flat"
               :loading="authStore.loading"
               @click="signInWithGoogle"
               prepend-icon="mdi-google"
               class="mb-2"
+              elevation="2"
             >
               Войти через Google
             </v-btn>
