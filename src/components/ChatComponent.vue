@@ -329,12 +329,12 @@ const scrollToMessage = (messageId: string) => {
 
 <template>
   <!-- v-main будет занимать всё доступное пространство между другими app-компонентами (например, v-footer) -->
-  <v-main class="fill-height">
-    <div v-if="userStore.user" class="fill-height">
+  <v-main>
+    <div v-if="userStore.user">
       <!-- 1. Показываем индикатор, пока isLoading === true -->
       <div
         v-if="isLoading"
-        class="fill-height d-flex justify-center align-center"
+        class="-fill-height d-flex justify-center align-center"
       >
         <v-progress-circular
           indeterminate
@@ -539,7 +539,7 @@ const scrollToMessage = (messageId: string) => {
         </v-container>
       </div>
     </div>
-    <div v-else class="fill-height d-flex justify-center align-center">
+    <div v-else class="d-flex justify-center align-center">
       <v-alert type="info" border="start" prominent>
         Please log in to see the chat.
       </v-alert>

@@ -189,8 +189,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container fluid class="pa-0 fill-height">
-    <v-card class="fill-height d-flex flex-column">
+  <v-container fluid class="pa-0">
+    <v-card class="d-flex flex-column">
       <!-- Chat Header -->
       <v-card-title class="bg-info">
         <v-row align="center" no-gutters>
@@ -216,7 +216,7 @@ onMounted(() => {
       <v-card-text
         ref="messagesContainer"
         class="flex-grow-1 overflow-y-auto messages-container"
-        style="max-height: calc(100vh - 200px)"
+        style="max-height: calc(100vh - 200px); width: 100%"
       >
         <div v-if="messages.length === 0" class="text-center text-grey pa-8">
           <v-icon size="60">mdi-chat-outline</v-icon>
@@ -309,3 +309,39 @@ onMounted(() => {
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+/* Стили для полной ширины Messages Area */
+.messages-container {
+  width: 100% !important;
+  padding: 16px !important;
+}
+
+.message-wrapper {
+  width: 100% !important;
+  margin-bottom: 16px;
+}
+
+.message-content {
+  width: 100% !important;
+}
+
+/* Расширяем пузырьки сообщений на всю ширину */
+.message-bubble {
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Убираем автоматические отступы для отправленных сообщений */
+.message-sent .message-bubble {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Убираем автоматические отступы для полученных сообщений */
+.message-received .message-bubble {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+</style>

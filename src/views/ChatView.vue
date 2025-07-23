@@ -283,7 +283,7 @@ watch(
     <!-- Main Content -->
     <v-main>
       <ChatWindow v-if="chatStore.activeChatId" />
-      <v-container v-else class="fill-height">
+      <v-container v-else>
         <v-row align="center" justify="center">
           <v-col cols="12" class="text-center">
             <v-icon size="80" color="grey">mdi-chat-outline</v-icon>
