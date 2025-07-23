@@ -186,11 +186,11 @@ onMounted(() => {
   <v-container fluid class="pa-0 fill-height">
     <v-card class="fill-height d-flex flex-column">
       <!-- Chat Header -->
-      <v-card-title class="bg-primary text-white">
+      <v-card-title class="bg-info">
         <v-row align="center" no-gutters>
           <v-col>
-            <div class="d-flex align-center">
-              <v-avatar size="40" class="mr-3">
+            <div class="d-flex align-center text-white">
+              <v-avatar class="text-white mr-3" size="40">
                 <v-icon>mdi-account-circle</v-icon>
               </v-avatar>
               <div>
