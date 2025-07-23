@@ -14,6 +14,8 @@ import {
   onSnapshot,
   Timestamp,
   FieldValue,
+  addDoc,
+  serverTimestamp,
 } from 'firebase/firestore'
 
 interface UserState {
@@ -79,6 +81,25 @@ export const useUserStore = defineStore('user', () => {
     })
   }
 
+  // Добавляем метод sendMessage для совместимости
+  async function sendMessage(text: string) {
+    if (!user.value || !text.trim()) return
+
+    const messagePayload = {
+      text: text.trim(),
+      uid: user.value.uid,
+      displayName: user.value.displayName || 'Anonymous',
+      createdAt: serverTimestamp(),
+    }
+
+    try {
+      await addDoc(collection(db, 'messages'), messagePayload)
+    } catch (error) {
+      console.error('Error sending message:', error)
+      throw error
+    }
+  }
+
   // Подписка на изменения состояния аутентификации
   const unsubscribe = onAuthStateChanged(
     auth,
@@ -135,7 +156,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function setUser(userData: UserState) {
-    user.value = userData;
+    user.value = userData
   }
 
   return {
@@ -149,5 +170,6 @@ export const useUserStore = defineStore('user', () => {
     unsubscribe,
     unsubscribeMessages,
     setUser,
+    sendMessage,
   }
 })
