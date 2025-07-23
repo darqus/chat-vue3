@@ -13,8 +13,12 @@ const vuetifyTheme = useTheme()
 authStore.initAuth()
 
 // Initialize Vuetify theme based on store value
-const themeName = themeStore.isDark ? 'dark' : 'light'
-vuetifyTheme.global.name.value = themeName
+vuetifyTheme.change(themeStore.isDark ? 'dark' : 'light')
+
+// Watch for theme changes in store
+themeStore.$subscribe(() => {
+  vuetifyTheme.change(themeStore.isDark ? 'dark' : 'light')
+})
 
 onMounted(() => {
   // Дополнительная инициализация если нужна
