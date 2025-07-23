@@ -42,34 +42,38 @@ export const useAuthStore = defineStore('auth', () => {
       firebaseUser.value = fbUser
 
       if (fbUser) {
-        // Get or create user document
-        const userDoc = await getDoc(doc(db, 'users', fbUser.uid))
+        try {
+          // Get or create user document
+          const userDoc = await getDoc(doc(db, 'users', fbUser.uid))
 
-        if (!userDoc.exists()) {
-          // Create new user document
-          const newUser: User = {
-            id: fbUser.uid,
-            name: fbUser.displayName || 'Anonymous',
-            email: fbUser.email || '',
-            photoURL: fbUser.photoURL,
-            isOnline: true,
-            lastSeen: serverTimestamp() as Timestamp,
+          if (!userDoc.exists()) {
+            // Create new user document
+            const newUser: User = {
+              id: fbUser.uid,
+              name: fbUser.displayName || 'Anonymous',
+              email: fbUser.email || '',
+              photoURL: fbUser.photoURL,
+              isOnline: true,
+              lastSeen: serverTimestamp() as Timestamp,
+            }
+
+            await setDoc(doc(db, 'users', fbUser.uid), newUser)
+            user.value = newUser
+          } else {
+            // Update existing user online status
+            const userData = userDoc.data() as User
+            userData.isOnline = true
+            userData.lastSeen = serverTimestamp() as Timestamp
+
+            await updateDoc(doc(db, 'users', fbUser.uid), {
+              isOnline: true,
+              lastSeen: serverTimestamp(),
+            })
+
+            user.value = userData
           }
-
-          await setDoc(doc(db, 'users', fbUser.uid), newUser)
-          user.value = newUser
-        } else {
-          // Update existing user online status
-          const userData = userDoc.data() as User
-          userData.isOnline = true
-          userData.lastSeen = serverTimestamp() as Timestamp
-
-          await updateDoc(doc(db, 'users', fbUser.uid), {
-            isOnline: true,
-            lastSeen: serverTimestamp(),
-          })
-
-          user.value = userData
+        } catch (error) {
+          console.error('Error setting up user:', error)
         }
       } else {
         user.value = null

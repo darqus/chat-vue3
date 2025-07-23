@@ -83,12 +83,18 @@ export const useUserStore = defineStore('user', () => {
 
   // Добавляем метод sendMessage для совместимости
   async function sendMessage(text: string) {
-    if (!user.value || !text.trim()) return
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated')
+    }
+
+    if (!text.trim()) {
+      return
+    }
 
     const messagePayload = {
       text: text.trim(),
-      uid: user.value.uid,
-      displayName: user.value.displayName || 'Anonymous',
+      uid: auth.currentUser.uid,
+      displayName: auth.currentUser.displayName || 'Anonymous',
       createdAt: serverTimestamp(),
     }
 

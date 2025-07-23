@@ -37,7 +37,13 @@ function scrollToBottom() {
 }
 
 async function sendMessage() {
-  if (!newMessage.value.trim() || sending.value || !authStore.user) return
+  if (!newMessage.value.trim() || sending.value) return
+
+  // Проверяем аутентификацию более тщательно
+  if (!authStore.user || !authStore.isAuthenticated) {
+    console.error('User not authenticated')
+    return
+  }
 
   sending.value = true
   try {
