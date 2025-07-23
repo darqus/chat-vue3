@@ -1,0 +1,452 @@
+// Основной файл стилей для чата - без зависимостей от глобальных стилей
+// Миксины и переменные
+$chat-primary-color: #1976d2;
+$chat-primary-gradient: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+$chat-sent-bg: $chat-primary-gradient;
+$chat-sent-text: white;
+$chat-received-bg: #e8e8e8;
+$chat-received-text: #2c2c2c;
+$chat-received-bg-dark: #3a3a3a;
+$chat-received-text-dark: #e0e0e0;
+
+// Размеры
+$message-bubble-radius: 18px;
+$message-bubble-padding: 12px 16px;
+$message-max-width: 70%;
+$message-margin-bottom: 16px;
+$message-tail-size: 8px;
+
+// Анимации
+$message-appear-duration: 0.3s;
+$hover-transition-duration: 0.2s;
+
+// Миксины
+@mixin message-tail($color, $direction: 'left') {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border: $message-tail-size solid transparent;
+
+  @if $direction == 'left' {
+    left: -$message-tail-size;
+    border-bottom-color: $color;
+    border-right-color: $color;
+    border-bottom-right-radius: 16px;
+  } @else {
+    right: -$message-tail-size;
+    border-bottom-color: $color;
+    border-left-color: $color;
+    border-bottom-left-radius: 16px;
+  }
+}
+
+// Анимации
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageHighlight {
+  0% {
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+  }
+}
+
+// Базовые стили для сообщений
+.message-wrapper {
+  display: flex;
+  margin-bottom: $message-margin-bottom;
+  width: 100%;
+  position: relative;
+
+  &:hover .message-actions {
+    opacity: 1;
+  }
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.message-bubble {
+  border-radius: $message-bubble-radius;
+  padding: $message-bubble-padding;
+  max-width: $message-max-width;
+  word-wrap: break-word;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  animation: messageAppear $message-appear-duration ease-out;
+}
+
+// Собственные сообщения
+.message-sent {
+  justify-content: flex-end;
+
+  .message-content {
+    align-items: flex-end;
+  }
+
+  .message-bubble {
+    background: $chat-sent-bg;
+    color: $chat-sent-text;
+    border-radius: $message-bubble-radius $message-bubble-radius 4px
+      $message-bubble-radius;
+    margin-left: auto;
+    margin-right: 0;
+    box-shadow: 0 3px 12px rgba(25, 118, 210, 0.4);
+
+    &::after {
+      @include message-tail(#1976d2, 'right');
+    }
+  }
+
+  .message-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    text-align: right;
+    justify-content: flex-end;
+  }
+
+  .message-time {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+// Чужие сообщения
+.message-received {
+  justify-content: flex-start;
+
+  .message-content {
+    align-items: flex-start;
+  }
+
+  .message-bubble {
+    background-color: $chat-received-bg;
+    color: $chat-received-text;
+    border-radius: $message-bubble-radius $message-bubble-radius
+      $message-bubble-radius 4px;
+    margin-left: 0;
+    margin-right: auto;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+    &::before {
+      @include message-tail($chat-received-bg, 'left');
+    }
+  }
+
+  .sender-name {
+    font-weight: 600;
+    color: $chat-primary-color;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+  }
+
+  .message-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .message-time {
+    color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+// Общие стили
+.message-text {
+  line-height: 1.4;
+  white-space: pre-wrap;
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+    opacity: 0.9;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.message-status {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+// Стили для изображений
+.message-image-preview {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  margin-top: 8px;
+  display: block;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+// Стили для действий
+.message-actions {
+  position: absolute;
+  top: -8px;
+  opacity: 0;
+  transition: opacity $hover-transition-duration ease;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+
+  &.actions-sent {
+    left: -60px;
+  }
+
+  &.actions-received {
+    right: -60px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    min-width: unset;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+      background-color: rgba($chat-primary-color, 0.1);
+    }
+  }
+}
+
+// Цитируемые сообщения
+.message-reply {
+  border-left: 3px solid $chat-primary-color;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba($chat-primary-color, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba($chat-primary-color, 0.12);
+    transform: translateX(2px);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: $chat-primary-color;
+    transition: width 0.2s ease;
+  }
+
+  &:hover::before {
+    width: 6px;
+  }
+
+  .reply-author {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: $chat-primary-color;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    &::before {
+      content: '↳';
+      opacity: 0.7;
+    }
+  }
+
+  .reply-text {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+// Реакции
+.message-reactions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+
+  .reaction-chip {
+    font-size: 0.75rem;
+    min-height: 24px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      transform: scale(1.05);
+      background-color: rgba($chat-primary-color, 0.1);
+    }
+
+    &.user-reacted {
+      background-color: rgba($chat-primary-color, 0.15);
+      border-color: $chat-primary-color;
+      color: $chat-primary-color;
+      font-weight: 500;
+    }
+
+    .emoji {
+      margin-right: 4px;
+    }
+
+    .count {
+      font-weight: 600;
+    }
+  }
+}
+
+// Подсветка сообщения
+.message--highlighted {
+  .message-bubble {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+    animation: messageHighlight 1.5s ease-out;
+  }
+}
+
+// Контейнер чата
+.messages-list-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  scroll-behavior: smooth;
+
+  // Кастомный скроллбар
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+// Темная тема
+@media (prefers-color-scheme: dark) {
+  .message-received .message-bubble {
+    background-color: $chat-received-bg-dark;
+    color: $chat-received-text-dark;
+    border-color: rgba(255, 255, 255, 0.1);
+
+    &::before {
+      @include message-tail($chat-received-bg-dark, 'left');
+    }
+  }
+
+  .message-received .sender-name {
+    color: #64b5f6;
+  }
+
+  .message-received .message-time {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .message-actions {
+    background: rgba(30, 30, 30, 0.9);
+  }
+
+  .message-reactions .reaction-chip {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+
+    &:hover {
+      background-color: rgba($chat-primary-color, 0.2);
+    }
+
+    &.user-reacted {
+      background-color: rgba($chat-primary-color, 0.25);
+      color: #64b5f6;
+    }
+  }
+
+  .message-reply {
+    background: rgba($chat-primary-color, 0.15);
+
+    &:hover {
+      background: rgba($chat-primary-color, 0.2);
+    }
+
+    .reply-author {
+      color: #64b5f6;
+    }
+  }
+
+  .messages-list-wrapper {
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+}

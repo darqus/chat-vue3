@@ -1,0 +1,55 @@
+// Transition mixin for smooth animations
+@mixin transition($properties: all, $duration: 0.3s, $timing: ease) {
+  transition: $properties $duration $timing;
+}
+
+// Focus ring mixin for accessibility
+@mixin focus-ring($color: #2196f3, $width: 2px, $offset: 2px) {
+  outline: $width solid $color;
+  outline-offset: $offset;
+}
+
+// Media query mixins
+@mixin media-light-scheme {
+  @media (prefers-color-scheme: light) {
+    @content;
+  }
+}
+
+@mixin media-dark-scheme {
+  @media (prefers-color-scheme: dark) {
+    @content;
+  }
+}
+
+// Responsive breakpoints
+@mixin mobile {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: 769px) and (max-width: 1024px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: 1025px) {
+    @content;
+  }
+}
+
+// Flexbox mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

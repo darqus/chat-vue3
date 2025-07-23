@@ -31,3 +31,7 @@ onMounted(() => {
     <NotificationSnackbar />
   </v-app>
 </template>
+
+<style lang="scss">
+@use '@/styles/chat-standalone.scss';
+</style>

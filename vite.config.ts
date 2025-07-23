@@ -8,7 +8,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@import "@/styles/index.scss";`,
+        // Убираем additionalData чтобы избежать конфликтов с @use правилами
       },
     },
   },

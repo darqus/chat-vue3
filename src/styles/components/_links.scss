@@ -1,3 +1,6 @@
+@use '../base/variables' as *;
+@use '../base/mixins' as *;
+
 a {
   font-weight: $font-weight-medium;
   color: map-get($dark-scheme, primary);

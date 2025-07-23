@@ -1,0 +1,117 @@
+@use '../base/variables' as *;
+
+// Цвета для чата
+$chat-primary-color: #1976d2;
+$chat-primary-gradient: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+$chat-sent-bg: $chat-primary-gradient;
+$chat-sent-text: white;
+$chat-received-bg: #e8e8e8;
+$chat-received-text: #2c2c2c;
+$chat-received-bg-dark: #3a3a3a;
+$chat-received-text-dark: #e0e0e0;
+
+// Размеры
+$message-bubble-radius: 18px;
+$message-bubble-padding: 12px 16px;
+$message-max-width: 70%;
+$message-margin-bottom: 16px;
+$message-tail-size: 8px;
+
+// Анимации
+$message-appear-duration: 0.3s;
+$hover-transition-duration: 0.2s;
+
+// Миксины
+@mixin message-tail($color, $direction: 'left') {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border: $message-tail-size solid transparent;
+
+  @if $direction == 'left' {
+    left: -$message-tail-size;
+    border-bottom-color: $color;
+    border-right-color: $color;
+    border-bottom-right-radius: 16px;
+  } @else {
+    right: -$message-tail-size;
+    border-bottom-color: $color;
+    border-left-color: $color;
+    border-bottom-left-radius: 16px;
+  }
+}
+
+@mixin message-bubble-base {
+  border-radius: $message-bubble-radius;
+  padding: $message-bubble-padding;
+  max-width: $message-max-width;
+  word-wrap: break-word;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@mixin message-wrapper-base {
+  display: flex;
+  margin-bottom: $message-margin-bottom;
+  width: 100%;
+  position: relative;
+}
+
+@mixin message-content-base {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+@mixin message-info-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+@mixin hover-actions {
+  .message-actions {
+    position: absolute;
+    top: -8px;
+    opacity: 0;
+    transition: opacity $hover-transition-duration ease;
+    z-index: 10;
+  }
+
+  &:hover .message-actions {
+    opacity: 1;
+  }
+}
+
+@mixin message-appear-animation {
+  animation: messageAppear $message-appear-duration ease-out;
+}
+
+// Анимации
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageHighlight {
+  0% {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  100% {
+    background-color: inherit;
+    color: inherit;
+  }
+}

@@ -130,7 +130,7 @@ const sendMessage = async () => {
     try {
       await addDoc(messagesCollection, messagePayload)
       notify.success('Сообщение отправлено')
-      
+
       newMessage.value = ''
       cancelReply() // Сбрасываем состояние ответа
       // После отправки сообщения мы точно не печатаем
@@ -350,110 +350,143 @@ const scrollToMessage = (messageId: string) => {
             v-for="message in messages"
             :key="message.id"
             :id="`message-${message.id}`"
-            class="message"
-            :class="{ 'my-message': message.uid === userStore.user.uid }"
+            class="message-wrapper"
+            :class="{
+              'message-sent': message.uid === userStore.user.uid,
+              'message-received': message.uid !== userStore.user.uid,
+            }"
           >
-            <!-- Меню действий для своих сообщений -->
-            <v-menu
-              v-if="message.uid === userStore.user?.uid"
-              location="bottom end"
-            >
-              <template #activator="{ props }">
-                <v-btn
-                  class="message__menu-btn"
-                  icon="mdi-dots-vertical"
-                  variant="text"
-                  size="x-small"
-                  v-bind="props"
-                ></v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="startEditing(message)">
-                  <v-list-item-title>Редактировать</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="promptDelete(message)">
-                  <v-list-item-title>Удалить</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-
-            <!-- Кнопка добавления реакции -->
-            <v-menu location="top" close-on-content-click>
-              <template #activator="{ props }">
-                <v-btn
-                  class="message__add-reaction-btn"
-                  icon="mdi-emoticon-happy-outline"
-                  variant="text"
-                  size="x-small"
-                  v-bind="props"
-                ></v-btn>
-              </template>
-              <v-sheet class="d-flex pa-1 rounded">
-                <v-btn
-                  v-for="emoji in ['👍', '❤️', '😂', '😮', '😢', '🙏']"
-                  :key="emoji"
-                  icon
-                  variant="text"
-                  size="small"
-                  @click="toggleReaction(message, emoji)"
-                  >{{ emoji }}</v-btn
-                >
-              </v-sheet>
-            </v-menu>
-
-            <v-btn
-              class="message__reply-btn"
-              icon="mdi-reply"
-              variant="text"
-              size="x-small"
-              @click="startReply(message)"
-            ></v-btn>
-
-            <!-- UI для редактирования сообщения -->
-            <div
-              v-if="editingMessage?.id === message.id"
-              class="message-content"
-            >
-              <v-textarea
-                v-model="editedText"
-                autofocus
-                auto-grow
-                rows="1"
-                hide-details
-                variant="underlined"
-                @keydown.enter.prevent="saveEdit"
-                @keydown.esc.prevent="cancelEditing"
-              ></v-textarea>
-              <div class="mt-2 text-caption">
-                Нажмите Esc для отмены, Enter для сохранения
+            <div class="message-content">
+              <!-- Меню действий для своих сообщений -->
+              <div
+                v-if="message.uid === userStore.user?.uid"
+                class="message-actions actions-sent"
+              >
+                <v-menu location="bottom end">
+                  <template #activator="{ props }">
+                    <v-btn
+                      icon="mdi-dots-vertical"
+                      variant="text"
+                      size="x-small"
+                      v-bind="props"
+                    ></v-btn>
+                  </template>
+                  <v-list density="compact">
+                    <v-list-item @click="startEditing(message)">
+                      <v-list-item-title>Редактировать</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="promptDelete(message)">
+                      <v-list-item-title>Удалить</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
               </div>
-            </div>
 
-            <!-- Обычное отображение сообщения -->
-            <template v-else>
+              <!-- Кнопки действий для всех сообщений -->
+              <div
+                class="message-actions"
+                :class="{
+                  'actions-sent': message.uid === userStore.user.uid,
+                  'actions-received': message.uid !== userStore.user.uid,
+                }"
+              >
+                <!-- Кнопка добавления реакции -->
+                <v-menu location="top" close-on-content-click>
+                  <template #activator="{ props }">
+                    <v-btn
+                      icon="mdi-emoticon-happy-outline"
+                      variant="text"
+                      size="x-small"
+                      v-bind="props"
+                    ></v-btn>
+                  </template>
+                  <v-sheet class="d-flex pa-1 rounded">
+                    <v-btn
+                      v-for="emoji in ['👍', '❤️', '😂', '😮', '😢', '🙏']"
+                      :key="emoji"
+                      icon
+                      variant="text"
+                      size="small"
+                      @click="toggleReaction(message, emoji)"
+                      >{{ emoji }}</v-btn
+                    >
+                  </v-sheet>
+                </v-menu>
+
+                <!-- Кнопка ответа -->
+                <v-btn
+                  icon="mdi-reply"
+                  variant="text"
+                  size="x-small"
+                  @click="startReply(message)"
+                ></v-btn>
+              </div>
+
               <!-- Блок с цитируемым сообщением -->
               <div
                 v-if="message.replyTo"
-                class="message__reply-to"
+                class="message-reply"
                 @click="scrollToMessage(message.replyTo.id)"
               >
-                <div class="font-weight-bold text-caption">
+                <div class="reply-author">
                   {{ message.replyTo.displayName }}
                 </div>
-                <div class="text-caption text-truncate">
+                <div class="reply-text">
                   {{ message.replyTo.text }}
                 </div>
               </div>
 
-              <div class="message-content">
-                <div class="font-weight-bold">{{ message.displayName }}</div>
+              <!-- UI для редактирования сообщения -->
+              <div
+                v-if="editingMessage?.id === message.id"
+                class="message-bubble"
+              >
+                <v-textarea
+                  v-model="editedText"
+                  autofocus
+                  auto-grow
+                  rows="1"
+                  hide-details
+                  variant="underlined"
+                  @keydown.enter.prevent="saveEdit"
+                  @keydown.esc.prevent="cancelEditing"
+                ></v-textarea>
+                <div class="mt-2 text-caption">
+                  Нажмите Esc для отмены, Enter для сохранения
+                </div>
+              </div>
+
+              <!-- Обычное отображение сообщения -->
+              <div v-else class="message-bubble">
+                <!-- Имя отправителя (только для чужих сообщений) -->
                 <div
-                  class="message-text-content"
+                  v-if="message.uid !== userStore.user.uid"
+                  class="sender-name"
+                >
+                  {{ message.displayName }}
+                </div>
+
+                <!-- Текст сообщения -->
+                <div
+                  class="message-text"
                   v-html="parseMessageText(message.text)"
                 ></div>
-                <div class="text-caption text-grey">
-                  {{ formatTimestamp(message.createdAt) }}
-                  <span v-if="message.isEdited" class="ml-1">(изменено)</span>
+
+                <!-- Информация о сообщении -->
+                <div class="message-info">
+                  <span class="message-time">
+                    {{ formatTimestamp(message.createdAt) }}
+                  </span>
+                  <span v-if="message.isEdited" class="text-caption">
+                    (изменено)
+                  </span>
+                  <!-- Статус для своих сообщений -->
+                  <div
+                    v-if="message.uid === userStore.user.uid"
+                    class="message-status"
+                  >
+                    <v-icon size="12">mdi-check</v-icon>
+                  </div>
                 </div>
               </div>
 
@@ -462,7 +495,7 @@ const scrollToMessage = (messageId: string) => {
                 v-if="
                   message.reactions && Object.keys(message.reactions).length > 0
                 "
-                class="reactions-container"
+                class="message-reactions"
               >
                 <v-tooltip
                   v-for="(reactors, emoji) in message.reactions"
@@ -472,8 +505,13 @@ const scrollToMessage = (messageId: string) => {
                   <template #activator="{ props }">
                     <v-chip
                       v-bind="props"
-                      class="mr-1 mb-1"
+                      class="reaction-chip"
                       size="small"
+                      :class="{
+                        'user-reacted': Object.keys(reactors).includes(
+                          userStore.user?.uid
+                        ),
+                      }"
                       :variant="
                         Object.keys(reactors).includes(userStore.user?.uid)
                           ? 'tonal'
@@ -490,7 +528,7 @@ const scrollToMessage = (messageId: string) => {
                   </div>
                 </v-tooltip>
               </div>
-            </template>
+            </div>
           </div>
           <!-- Индикатор "печатает..." -->
           <div v-if="typingIndicatorText" class="typing-indicator pl-4">
@@ -583,129 +621,3 @@ const scrollToMessage = (messageId: string) => {
     </v-form>
   </v-footer>
 </template>
-
-<style scoped>
-.messages-list-wrapper {
-  height: 100%; /* Занимает всю высоту v-main */
-  overflow-y: auto;
-}
-
-.message {
-  position: relative; /* Необходимо для позиционирования кнопки ответа */
-  display: flex;
-  flex-direction: column;
-  max-width: 100%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background-color: #f1f1f1;
-  align-self: flex-start;
-  word-wrap: break-word;
-  margin-bottom: 12px; /* Используем margin для отступов между сообщениями */
-}
-
-.message.my-message {
-  background-color: #d1eaff;
-  align-self: flex-end;
-}
-
-.message-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.my-message .message-content {
-  align-items: flex-end;
-}
-
-.message__menu-btn {
-  position: absolute;
-  top: 0px;
-  right: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-  z-index: 2; /* Выше чем reply-btn */
-}
-
-.message:hover .message__menu-btn {
-  opacity: 1;
-}
-
-.message__add-reaction-btn {
-  position: absolute;
-  bottom: -12px;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-  z-index: 1;
-  background-color: white;
-  border-radius: 50%;
-}
-
-.message:hover .message__add-reaction-btn {
-  opacity: 1;
-}
-
-.message__reply-btn {
-  position: absolute;
-  top: -8px;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-  z-index: 1;
-}
-
-.message:hover .message__reply-btn {
-  opacity: 1;
-}
-
-.message.my-message .message__reply-btn {
-  left: -8px;
-}
-.message.my-message .message__add-reaction-btn {
-  left: 20px;
-}
-
-.message:not(.my-message) .message__reply-btn {
-  right: -8px;
-}
-.message:not(.my-message) .message__add-reaction-btn {
-  right: 20px;
-}
-
-.message__reply-to {
-  border-left: 3px solid #007bff;
-  padding-left: 8px;
-  margin-bottom: 6px;
-  opacity: 0.9;
-  cursor: pointer;
-}
-
-.message--highlighted {
-  transition: background-color 0.5s ease;
-  background-color: #fff3cd !important; /* Светло-желтый цвет для подсветки */
-}
-
-.typing-indicator {
-  height: 24px; /* Резервируем место, чтобы чат не "прыгал" */
-  display: flex;
-  align-items: center;
-}
-
-.reactions-container {
-  margin-top: 8px;
-  align-self: flex-start; /* Чтобы контейнер не растягивался на всю ширину */
-}
-
-/* :deep() используется для стилизации контента, сгенерированного через v-html */
-:deep(.message-text-content a) {
-  color: #1e88e5;
-  text-decoration: underline;
-}
-
-:deep(.message-image-preview) {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 8px;
-  margin-top: 8px;
-  display: block;
-  object-fit: cover;
-}
-</style>

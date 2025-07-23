@@ -1,0 +1,298 @@
+@use 'chat-mixins' as chat;
+
+// Стили для действий с сообщениями
+.message-actions {
+  position: absolute;
+  top: -8px;
+  opacity: 0;
+  transition: opacity chat.$hover-transition-duration ease;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+
+  &.actions-sent {
+    left: -60px;
+  }
+
+  &.actions-received {
+    right: -60px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    min-width: unset;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+      background-color: rgba(chat.$chat-primary-color, 0.1);
+    }
+  }
+}
+
+// Реакции к сообщениям
+.message-reactions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+
+  .reaction-chip {
+    font-size: 0.75rem;
+    min-height: 24px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      transform: scale(1.05);
+      background-color: rgba(chat.$chat-primary-color, 0.1);
+    }
+
+    &.user-reacted {
+      background-color: rgba(chat.$chat-primary-color, 0.15);
+      border-color: chat.$chat-primary-color;
+      color: chat.$chat-primary-color;
+      font-weight: 500;
+    }
+
+    .emoji {
+      margin-right: 4px;
+    }
+
+    .count {
+      font-weight: 600;
+    }
+  }
+}
+
+// Меню реакций
+.reactions-menu {
+  padding: 8px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 4px;
+
+  .emoji-btn {
+    width: 36px;
+    height: 36px;
+    min-width: unset;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+
+    &:hover {
+      transform: scale(1.2);
+      background-color: rgba(chat.$chat-primary-color, 0.1);
+      border-color: chat.$chat-primary-color;
+    }
+  }
+}
+
+// Меню действий для сообщений
+.message-menu {
+  min-width: 160px;
+
+  .menu-item {
+    padding: 8px 16px;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    &:hover {
+      background-color: rgba(chat.$chat-primary-color, 0.08);
+    }
+
+    &.delete-item {
+      color: #d32f2f;
+
+      &:hover {
+        background-color: rgba(211, 47, 47, 0.08);
+      }
+    }
+
+    .menu-icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.7;
+    }
+
+    .menu-text {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+// Цитируемые сообщения
+.message-reply {
+  border-left: 3px solid chat.$chat-primary-color;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(chat.$chat-primary-color, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba(chat.$chat-primary-color, 0.12);
+    transform: translateX(2px);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: chat.$chat-primary-color;
+    transition: width 0.2s ease;
+  }
+
+  &:hover::before {
+    width: 6px;
+  }
+
+  .reply-author {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: chat.$chat-primary-color;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    &::before {
+      content: '↳';
+      opacity: 0.7;
+    }
+  }
+
+  .reply-text {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+// Анимация выделения сообщения при переходе
+.message--highlighted {
+  .message-bubble {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+    animation: messageHighlight 1.5s ease-out;
+  }
+}
+
+@keyframes messageHighlight {
+  0% {
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+  }
+}
+
+// Состояние редактирования
+.message-editing {
+  .message-bubble {
+    border: 2px solid chat.$chat-primary-color;
+    background-color: rgba(chat.$chat-primary-color, 0.05);
+  }
+
+  .edit-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+
+    .edit-btn {
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      min-height: 28px;
+
+      &.save-btn {
+        background-color: chat.$chat-primary-color;
+        color: white;
+      }
+
+      &.cancel-btn {
+        background-color: transparent;
+        color: rgba(0, 0, 0, 0.6);
+      }
+    }
+  }
+
+  .edit-hint {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 4px;
+    font-style: italic;
+  }
+}
+
+// Темная тема
+@media (prefers-color-scheme: dark) {
+  .message-actions {
+    background: rgba(30, 30, 30, 0.9);
+  }
+
+  .reactions-menu {
+    background: #2c2c2c;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .message-reactions .reaction-chip {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+
+    &:hover {
+      background-color: rgba(chat.$chat-primary-color, 0.2);
+    }
+
+    &.user-reacted {
+      background-color: rgba(chat.$chat-primary-color, 0.25);
+      color: #64b5f6;
+    }
+  }
+
+  .message-reply {
+    background: rgba(chat.$chat-primary-color, 0.15);
+
+    &:hover {
+      background: rgba(chat.$chat-primary-color, 0.2);
+    }
+
+    .reply-author {
+      color: #64b5f6;
+    }
+  }
+
+  .message-editing .message-bubble {
+    background-color: rgba(chat.$chat-primary-color, 0.1);
+  }
+}

@@ -1,11 +1,10 @@
-// Базовые стили
+// Импорты должны быть в самом начале
 @use 'base/variables';
 @use 'base/mixins';
 @use 'base/reset';
-
-// Компоненты
 @use 'components/buttons';
 @use 'components/links';
+@use 'components/chat';
 
 // Глобальные стили
 :root {

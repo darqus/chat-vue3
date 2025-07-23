@@ -1,0 +1,152 @@
+@use 'chat-mixins' as chat;
+@forward 'chat-mixins';
+@forward 'chat-ui';
+@forward 'chat-interactions';
+
+// Базовые стили для сообщений
+.message-wrapper {
+  @include chat.message-wrapper-base;
+  @include chat.hover-actions;
+}
+
+.message-content {
+  @include chat.message-content-base;
+}
+
+.message-bubble {
+  @include chat.message-bubble-base;
+  @include chat.message-appear-animation;
+}
+
+// Собственные сообщения
+.message-sent {
+  justify-content: flex-end;
+
+  .message-content {
+    align-items: flex-end;
+  }
+
+  .message-bubble {
+    background: chat.$chat-sent-bg;
+    color: chat.$chat-sent-text;
+    border-radius: chat.$message-bubble-radius chat.$message-bubble-radius 4px
+      chat.$message-bubble-radius;
+    margin-left: auto;
+    margin-right: 0;
+    box-shadow: 0 3px 12px rgba(25, 118, 210, 0.4);
+
+    &::after {
+      @include chat.message-tail(#1976d2, 'right');
+    }
+  }
+
+  .message-info {
+    @include chat.message-info-base;
+    text-align: right;
+    justify-content: flex-end;
+  }
+
+  .message-time {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+// Чужие сообщения
+.message-received {
+  justify-content: flex-start;
+
+  .message-content {
+    align-items: flex-start;
+  }
+
+  .message-bubble {
+    background-color: chat.$chat-received-bg;
+    color: chat.$chat-received-text;
+    border-radius: chat.$message-bubble-radius chat.$message-bubble-radius
+      chat.$message-bubble-radius 4px;
+    margin-left: 0;
+    margin-right: auto;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+    &::before {
+      @include chat.message-tail(chat.$chat-received-bg, 'left');
+    }
+  }
+
+  .sender-name {
+    font-weight: 600;
+    color: chat.$chat-primary-color;
+    font-size: 0.875rem;
+    margin-bottom: 4px;
+  }
+
+  .message-info {
+    @include chat.message-info-base;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .message-time {
+    color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+// Общие стили
+.message-text {
+  line-height: 1.4;
+  white-space: pre-wrap;
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+    opacity: 0.9;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.message-status {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+// Стили для изображений
+.message-image-preview {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  margin-top: 8px;
+  display: block;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+// Темная тема
+@media (prefers-color-scheme: dark) {
+  .message-received .message-bubble {
+    background-color: chat.$chat-received-bg-dark;
+    color: chat.$chat-received-text-dark;
+    border-color: rgba(255, 255, 255, 0.1);
+
+    &::before {
+      @include chat.message-tail(chat.$chat-received-bg-dark, 'left');
+    }
+  }
+
+  .message-received .sender-name {
+    color: #64b5f6;
+  }
+
+  .message-received .message-time {
+    color: rgba(255, 255, 255, 0.7);
+  }
+}

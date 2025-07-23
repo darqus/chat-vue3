@@ -220,57 +220,42 @@ onMounted(() => {
         <div
           v-for="message in messages"
           :key="message.id"
-          class="message-wrapper mb-3"
+          class="message-wrapper"
+          :class="[
+            message.uid === currentUserId ? 'message-sent' : 'message-received',
+          ]"
         >
-          <div
-            :class="[
-              'message',
-              message.uid === currentUserId
-                ? 'message-sent'
-                : 'message-received',
-            ]"
-          >
+          <div class="message-content">
             <!-- Message Bubble -->
-            <v-card
-              :color="
-                message.uid === currentUserId ? 'primary' : 'grey-lighten-3'
-              "
-              :class="[
-                'message-bubble',
-                message.uid === currentUserId ? 'text-white' : 'text-black',
-              ]"
-              elevation="1"
-            >
-              <v-card-text class="pa-2">
-                <!-- Sender name for received messages -->
+            <div class="message-bubble">
+              <!-- Sender name for received messages -->
+              <div v-if="message.uid !== currentUserId" class="sender-name">
+                {{ message.displayName }}
+              </div>
+
+              <!-- Message content -->
+              <div
+                class="message-text"
+                v-html="parseMessageText(message.text)"
+              ></div>
+
+              <!-- Message info -->
+              <div class="message-info">
+                <small class="message-time">
+                  {{ formatMessageTime(message.createdAt) }}
+                </small>
+
+                <!-- Status icons for sent messages -->
                 <div
-                  v-if="message.uid !== currentUserId"
-                  class="text-caption font-weight-bold mb-1"
+                  v-if="message.uid === currentUserId"
+                  class="message-status"
                 >
-                  {{ message.displayName }}
+                  <v-icon size="12">
+                    {{ getStatusIcon('sent') }}
+                  </v-icon>
                 </div>
-
-                <!-- Message content -->
-                <div
-                  class="message-text"
-                  v-html="parseMessageText(message.text)"
-                ></div>
-
-                <!-- Message info -->
-                <div class="d-flex align-center justify-space-between mt-1">
-                  <small class="text-caption opacity-75">
-                    {{ formatMessageTime(message.createdAt) }}
-                  </small>
-
-                  <!-- Status icons for sent messages -->
-                  <div v-if="message.uid === currentUserId" class="ml-2">
-                    <v-icon size="12" color="grey">
-                      {{ getStatusIcon('sent') }}
-                    </v-icon>
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -318,60 +303,3 @@ onMounted(() => {
     </v-card>
   </v-container>
 </template>
-
-<style scoped>
-.messages-container {
-  padding: 16px;
-}
-
-.message-wrapper {
-  display: flex;
-  width: 100%;
-}
-
-.message-sent {
-  justify-content: flex-end;
-}
-
-.message-received {
-  justify-content: flex-start;
-}
-
-.message-bubble {
-  max-width: 70%;
-  border-radius: 18px !important;
-}
-
-.message-sent .message-bubble {
-  border-bottom-right-radius: 4px !important;
-}
-
-.message-received .message-bubble {
-  border-bottom-left-radius: 4px !important;
-}
-
-.typing-indicator {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.message-text {
-  word-wrap: break-word;
-  white-space: pre-wrap;
-}
-
-/* Стили для изображений в сообщениях */
-:deep(.message-image-preview) {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 8px;
-  margin-top: 8px;
-  display: block;
-  object-fit: cover;
-}
-
-:deep(.message-text a) {
-  color: inherit;
-  text-decoration: underline;
-}
-</style>
