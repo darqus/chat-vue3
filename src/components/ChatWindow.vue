@@ -216,7 +216,7 @@ onMounted(() => {
       <v-card-text
         ref="messagesContainer"
         class="flex-grow-1 overflow-y-auto messages-container"
-        style="max-height: calc(100vh - 300px)"
+        style="max-height: calc(100vh - 200px)"
       >
         <div v-if="messages.length === 0" class="text-center text-grey pa-8">
           <v-icon size="60">mdi-chat-outline</v-icon>
