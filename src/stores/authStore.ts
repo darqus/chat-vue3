@@ -39,7 +39,6 @@ export const useAuthStore = defineStore('auth', () => {
   // Initialize auth state listener
   function initAuth() {
     onAuthStateChanged(auth, async (fbUser) => {
-      console.log('Auth state changed:', fbUser?.email)
       firebaseUser.value = fbUser
 
       if (fbUser) {
@@ -59,7 +58,6 @@ export const useAuthStore = defineStore('auth', () => {
 
           await setDoc(doc(db, 'users', fbUser.uid), newUser)
           user.value = newUser
-          console.log('Created new user:', newUser)
         } else {
           // Update existing user online status
           const userData = userDoc.data() as User
@@ -72,15 +70,12 @@ export const useAuthStore = defineStore('auth', () => {
           })
 
           user.value = userData
-          console.log('Updated existing user:', userData)
         }
       } else {
         user.value = null
-        console.log('User signed out')
       }
 
       loading.value = false
-      console.log('Auth loading finished, isAuthenticated:', !!user.value)
     })
   }
 
@@ -90,8 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
       const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-      console.log('Google sign in successful:', result.user)
+      await signInWithPopup(auth, provider)
       notify.success('Успешный вход')
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Ошибка входа'
@@ -99,7 +93,6 @@ export const useAuthStore = defineStore('auth', () => {
         'Ошибка входа: ' +
           (err instanceof Error ? err.message : 'Неизвестная ошибка')
       )
-      console.error('Sign in error:', err)
     } finally {
       loading.value = false
     }
@@ -144,7 +137,6 @@ export const useAuthStore = defineStore('auth', () => {
         'Ошибка выхода: ' +
           (err instanceof Error ? err.message : 'Неизвестная ошибка')
       )
-      console.error('Sign out error:', err)
     }
   }
 
