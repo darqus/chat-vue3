@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useTheme } from 'vuetify'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import { useThemeStore } from '../stores/themeStore'
@@ -9,6 +10,7 @@ import { Timestamp } from 'firebase/firestore'
 const authStore = useAuthStore()
 const chatStore = useChatStore()
 const themeStore = useThemeStore()
+const vuetifyTheme = useTheme()
 
 const drawer = ref(false)
 
@@ -41,6 +43,9 @@ function selectChat(chatId: string) {
 
 function toggleTheme() {
   themeStore.toggleTheme()
+  // Apply theme to Vuetify
+  const themeName = themeStore.isDark ? 'dark' : 'light'
+  vuetifyTheme.global.name.value = themeName
 }
 
 function formatTime(date: Date | Timestamp): string {
@@ -58,8 +63,11 @@ function formatTime(date: Date | Timestamp): string {
 }
 
 onMounted(() => {
+  // Initialize Vuetify theme based on store value
+  const themeName = themeStore.isDark ? 'dark' : 'light'
+  vuetifyTheme.global.name.value = themeName
+
   // Не вызываем authStore.initAuth() здесь, так как это уже делается в App.vue
-  // themeStore.initTheme() тоже уже вызван в App.vue
 
   if (authStore.user?.id) {
     chatStore.setupChatsListener(authStore.user.id)
