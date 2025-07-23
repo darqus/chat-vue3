@@ -69,33 +69,66 @@ export const useChatStore = defineStore('chat', () => {
     activeChatId.value = chatId
     messages.value = [] // Clear previous messages
 
-    const q = query(
-      collection(db, 'messages'),
-      where('chatId', '==', chatId),
-      orderBy('timestamp', 'asc')
-    )
+    // Для общего чата используем существующую структуру без chatId
+    if (chatId === 'general') {
+      const q = query(collection(db, 'messages'), orderBy('createdAt', 'asc'))
 
-    return onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        const messageData = {
-          id: change.doc.id,
-          ...change.doc.data(),
-        } as ChatMessage
-
-        if (change.type === 'added') {
-          messages.value.push(messageData)
-        } else if (change.type === 'modified') {
-          const index = messages.value.findIndex((m) => m.id === messageData.id)
-          if (index !== -1) {
-            messages.value[index] = messageData
-          }
-        }
+      return onSnapshot(q, (snapshot) => {
+        messages.value = snapshot.docs.map((doc) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            text: data.text || '',
+            senderId: data.uid || '',
+            senderName: data.displayName || 'Anonymous',
+            chatId: 'general',
+            timestamp: data.createdAt,
+            status: 'sent',
+            read: true,
+            type: 'text',
+            replyTo: data.replyTo,
+            isEdited: data.isEdited,
+            reactions: data.reactions,
+          } as ChatMessage
+        })
       })
-    })
+    } else {
+      // Для других чатов используем новую структуру с chatId
+      const q = query(
+        collection(db, 'messages'),
+        where('chatId', '==', chatId),
+        orderBy('timestamp', 'asc')
+      )
+
+      return onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          const messageData = {
+            id: change.doc.id,
+            ...change.doc.data(),
+          } as ChatMessage
+
+          if (change.type === 'added') {
+            messages.value.push(messageData)
+          } else if (change.type === 'modified') {
+            const index = messages.value.findIndex(
+              (m) => m.id === messageData.id
+            )
+            if (index !== -1) {
+              messages.value[index] = messageData
+            }
+          }
+        })
+      })
+    }
   }
 
   // Setup chats listener
   function setupChatsListener(userId: string) {
+    if (!userId) {
+      console.warn('setupChatsListener called with undefined userId')
+      return
+    }
+
     const q = query(
       collection(db, 'chats'),
       where('participants', 'array-contains', userId)
@@ -130,25 +163,36 @@ export const useChatStore = defineStore('chat', () => {
   ) {
     if (!activeChatId.value) return
 
-    const message: Omit<ChatMessage, 'id'> = {
-      text,
-      senderId,
-      senderName,
-      chatId: activeChatId.value,
-      timestamp: serverTimestamp() as Timestamp,
-      status: 'sending',
-      read: false,
-      type,
-    }
-
     try {
-      await addDoc(collection(db, 'messages'), message)
+      if (activeChatId.value === 'general') {
+        // Для общего чата используем существующую структуру
+        const message = {
+          text,
+          uid: senderId,
+          displayName: senderName,
+          createdAt: serverTimestamp(),
+        }
+        await addDoc(collection(db, 'messages'), message)
+      } else {
+        // Для других чатов используем новую структуру
+        const message: Omit<ChatMessage, 'id'> = {
+          text,
+          senderId,
+          senderName,
+          chatId: activeChatId.value,
+          timestamp: serverTimestamp() as Timestamp,
+          status: 'sending',
+          read: false,
+          type,
+        }
+        await addDoc(collection(db, 'messages'), message)
 
-      // Update chat's last message
-      await updateDoc(doc(db, 'chats', activeChatId.value), {
-        lastMessage: text,
-        lastMessageTime: serverTimestamp(),
-      })
+        // Update chat's last message
+        await updateDoc(doc(db, 'chats', activeChatId.value), {
+          lastMessage: text,
+          lastMessageTime: serverTimestamp(),
+        })
+      }
 
       notify.success('Сообщение отправлено')
     } catch (error) {

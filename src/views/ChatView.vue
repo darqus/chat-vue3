@@ -58,11 +58,10 @@ function formatTime(date: Date | Timestamp): string {
 }
 
 onMounted(() => {
-  // Initialize auth and setup listeners
-  authStore.initAuth()
-  themeStore.initTheme()
+  // Не вызываем authStore.initAuth() здесь, так как это уже делается в App.vue
+  // themeStore.initTheme() тоже уже вызван в App.vue
 
-  if (authStore.user) {
+  if (authStore.user?.id) {
     chatStore.setupChatsListener(authStore.user.id)
     chatStore.setupUsersListener()
 
@@ -75,7 +74,7 @@ onMounted(() => {
 watch(
   () => authStore.user,
   (user) => {
-    if (user) {
+    if (user?.id) {
       chatStore.setupChatsListener(user.id)
       chatStore.setupUsersListener()
 

@@ -7,9 +7,12 @@ import NotificationSnackbar from './components/NotificationSnackbar.vue'
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 
+// Инициализируем сразу, не ждем onMounted
+authStore.initAuth()
+themeStore.initTheme()
+
 onMounted(() => {
-  authStore.initAuth()
-  themeStore.initTheme()
+  // Дополнительная инициализация если нужна
 })
 </script>
 

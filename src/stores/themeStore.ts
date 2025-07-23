@@ -13,26 +13,34 @@ export const useThemeStore = defineStore('theme', () => {
 
   function toggleTheme() {
     isDark.value = !isDark.value
-    localStorage.setItem('chat-app-theme', isDark.value ? 'dark' : 'light')
+    const themeName = isDark.value ? 'dark' : 'light'
+    localStorage.setItem('chat-app-theme', themeName)
 
-    // Apply theme to Vuetify
+    // Apply theme to Vuetify using recommended API
     const theme = useTheme()
-    theme.global.name.value = isDark.value ? 'dark' : 'light'
+    if (theme.global.name) {
+      theme.global.name.value = themeName
+    }
   }
 
-  function setTheme(theme: 'light' | 'dark') {
-    isDark.value = theme === 'dark'
-    localStorage.setItem('chat-app-theme', theme)
+  function setTheme(themeName: 'light' | 'dark') {
+    isDark.value = themeName === 'dark'
+    localStorage.setItem('chat-app-theme', themeName)
 
-    // Apply theme to Vuetify
+    // Apply theme to Vuetify using recommended API
     const vuetifyTheme = useTheme()
-    vuetifyTheme.global.name.value = theme
+    if (vuetifyTheme.global.name) {
+      vuetifyTheme.global.name.value = themeName
+    }
   }
 
   // Initialize theme on store creation
   function initTheme() {
+    const themeName = isDark.value ? 'dark' : 'light'
     const theme = useTheme()
-    theme.global.name.value = isDark.value ? 'dark' : 'light'
+    if (theme.global.name) {
+      theme.global.name.value = themeName
+    }
   }
 
   return {

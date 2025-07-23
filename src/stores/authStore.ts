@@ -39,6 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Initialize auth state listener
   function initAuth() {
     onAuthStateChanged(auth, async (fbUser) => {
+      console.log('Auth state changed:', fbUser?.email)
       firebaseUser.value = fbUser
 
       if (fbUser) {
@@ -58,6 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
 
           await setDoc(doc(db, 'users', fbUser.uid), newUser)
           user.value = newUser
+          console.log('Created new user:', newUser)
         } else {
           // Update existing user online status
           const userData = userDoc.data() as User
@@ -70,12 +72,15 @@ export const useAuthStore = defineStore('auth', () => {
           })
 
           user.value = userData
+          console.log('Updated existing user:', userData)
         }
       } else {
         user.value = null
+        console.log('User signed out')
       }
 
       loading.value = false
+      console.log('Auth loading finished, isAuthenticated:', !!user.value)
     })
   }
 
@@ -85,7 +90,8 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      const result = await signInWithPopup(auth, provider)
+      console.log('Google sign in successful:', result.user)
       notify.success('Успешный вход')
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Ошибка входа'
